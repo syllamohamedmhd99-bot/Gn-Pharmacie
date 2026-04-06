@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Bulletin de Paie - {{ record.employee.first_name }} {{ record.employee.last_name }}{% endblock %}
+
+{% block content %}
+<div class="no-print mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <a href="{{ url_for('hr.payroll_history') }}" class="btn btn-outline-secondary rounded-pill">
+            <i data-lucide="arrow-left" class="me-2"></i> Retour à l'historique
+        </a>
+        <button class="btn btn-primary rounded-pill px-4" onclick="window.print()">
+            <i data-lucide="printer" class="me-2"></i> Imprimer le bulletin
+        </button>
+    </div>
+</div>
+
+<div class="payslip-container bg-white p-5 shadow-sm mx-auto" style="max-width: 800px; border: 1px solid #e2e8f0;">
+    <!-- En-tête du bulletin -->
+    <div class="text-center mb-5 border-bottom pb-4">
+        <h3 class="fw-bold text-primary mb-1">PHARMACLOUD ERP</h3>
+        <p class="text-muted small mb-0">Pharmacie de Conakry Centre, République de Guinée</p>
+        <h4 class="mt-4 fw-bold">BULLETIN DE PAIE</h4>
+        <p class="text-secondary">Période : <strong>{{ record.month }}/{{ record.year }}</strong></p>
+    </div>
+
+    <!-- Informations Employé et Employeur -->
+    <div class="row mb-5">
+        <div class="col-6">
+            <h6 class="text-muted text-uppercase small fw-bold mb-3">Employeur</h6>
+            <div class="ps-2 border-start border-3 border-primary">
+                <p class="mb-1 fw-bold">PharmaCloud S.A.R.L</p>
+                <p class="mb-1 small">Conakry, Guinée</p>
+                <p class="mb-1 small">Tél : +224 000 00 00 00</p>
+            </div>
+        </div>
+        <div class="col-6">
+            <h6 class="text-muted text-uppercase small fw-bold mb-3">Salarié</h6>
+            <div class="ps-2 border-start border-3 border-secondary">
+                <p class="mb-1 fw-bold">{{ record.employee.first_name }} {{ record.employee.last_name }}</p>
+                <p class="mb-1 small">Poste : {{ record.employee.role }}</p>
+                <p class="mb-1 small">Email : {{ record.employee.email }}</p>
+                <p class="mb-1 small">Contrat : {{ record.employee.contract_type or 'N/A' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Détail des calculs -->
+    <table class="table table-bordered mb-5">
+        <thead class="table-light">
+            <tr>
+                <th>Désignation</th>
+                <th class="text-center">Nombre / Taux</th>
+                <th class="text-end">Gains</th>
+                <th class="text-end">Retenues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Salaire de base mensuel</td>
+                <td class="text-center">Fixe</td>
+                <td class="text-end">{{ "{:,.0f}".format(record.base_salary) }}</td>
+                <td class="text-end">-</td>
+            </tr>
+            <tr>
+                <td>Heures travaillées (Pointage)</td>
+                <td class="text-center">{{ record.worked_hours }} h</td>
+                <td class="text-end">-</td>
+                <td class="text-end">-</td>
+            </tr>
+            {% if record.advance_deducted > 0 %}
+            <tr class="text-danger">
+                <td>Remboursement Avance sur Salaire</td>
+                <td class="text-center">-</td>
+                <td class="text-end">-</td>
+                <td class="text-end">{{ "{:,.0f}".format(record.advance_deducted) }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+        <tfoot>
+            <tr class="table-dark">
+                <td colspan="2" class="fw-bold">NET À PAYER (GNF)</td>
+                <td colspan="2" class="text-end fw-bold fs-5">{{ "{:,.0f}".format(record.total_paid) }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Pied de page du bulletin -->
+    <div class="row mt-5 pt-5">
+        <div class="col-6 text-center">
+            <p class="small text-muted mb-5">Signature de l'employeur</p>
+            <div style="height: 60px;"></div>
+            <p class="small fw-bold">Direction Générale</p>
+        </div>
+        <div class="col-6 text-center">
+            <p class="small text-muted mb-5">Signature du salarié</p>
+            <div style="height: 60px;"></div>
+            <p class="small fw-bold">{{ record.employee.first_name }} {{ record.employee.last_name }}</p>
+        </div>
+    </div>
+
+    <div class="text-center mt-5 pt-5 text-muted small">
+        <p>Ce bulletin est généré informatiquement par PharmaCloud ERP.<br>Pour faire valoir ce que de droit.</p>
+    </div>
+</div>
+
+<style>
+    @media print {
+
+        .sidebar,
+        .navbar,
+        .no-print,
+        header {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+
+        .payslip-container {
+            border: none !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        body {
+            background-color: white !important;
+        }
+    }
+</style>
+{% endblock %}

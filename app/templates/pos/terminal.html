@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}Caisse Terminal - PharmaCloud{% endblock %}
+{% block header %}Terminal de Vente{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Section Produits/Sélection -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden"
+            style="min-height: 600px; display: flex; flex-direction: column;">
+            <div class="card-header bg-white border-0 p-4 pb-2">
+                <div id="alertContainer"></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i data-lucide="package" class="text-primary"></i> Sélection des Produits
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('pos.history') }}"
+                            class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                            <i data-lucide="history" class="me-1" style="width: 14px;"></i> Historique
+                        </a>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary active" id="viewGrid">Grille</button>
+                            <button class="btn btn-outline-primary" id="viewList">Liste</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="position-relative mb-3">
+                    <input type="text" id="productSearch"
+                        class="form-control form-control-lg rounded-pill border-0 bg-light px-4"
+                        placeholder="Rechercher par nom ou scanner code-barres..." autocomplete="off">
+                    <div id="searchResults"
+                        class="position-absolute w-100 mt-2 shadow-lg rounded-4 bg-white z-3 d-none overflow-auto"
+                        style="max-height: 300px; border: 1px solid #eee;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- New: Product Catalog Grid -->
+            <div id="catalogContainer" class="p-4 bg-light flex-grow-0"
+                style="max-height: 250px; overflow-y: auto; border-bottom: 2px solid #eee;">
+                <div class="row g-2" id="catalogGrid">
+                    <!-- Products cards here -->
+                </div>
+            </div>
+
+
+            <div class="card-body p-0 flex-grow-1">
+                <div class="table-responsive h-100">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light sticky-top">
+                            <tr class="small text-uppercase text-muted fw-bold">
+                                <th class="px-4 py-3">Produit</th>
+                                <th class="py-3 text-center">Quantité</th>
+                                <th class="py-3 text-end">Prix</th>
+                                <th class="px-4 py-3 text-end">Sous-total</th>
+                                <th class="py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartTableBody">
+                            <!-- JS renders cart here -->
+                        </tbody>
+                    </table>
+                    <div id="emptyCartMessage" class="text-center py-5">
+                        <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+                            <i data-lucide="shopping-cart" size="40" class="text-muted opacity-50"></i>
+                        </div>
+                        <h5 class="text-muted">Votre panier est vide</h5>
+                        <p class="small text-muted">Recherchez un produit ci-dessus pour commencer</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-white border-0 p-4">
+                <div class="d-flex justify-content-between align-items-end">
+                    <div>
+                        <span class="text-muted small d-block">Résumé de la vente</span>
+                        <div class="h5 fw-bold mb-0"><span id="cartItemCount">0</span> Article(s)</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-muted small d-block">Montant Total</span>
+                        <div class="h2 fw-bold text-primary mb-0" id="cartTotal">0 GNF</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Paiement -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Méthode de Paiement</h5>
+                <div class="d-grid gap-3">
+                    <button onclick="processCheckout('OrangeMoney')"
+                        class="btn btn-lg rounded-4 border-0 pay-btn transition d-flex align-items-center justify-content-between px-4 py-3"
+                        style="background-color: #ff7900; color: white;">
+                        <span class="fw-bold">Orange Money</span>
+                        <i data-lucide="smartphone"></i>
+                    </button>
+                    <button onclick="processCheckout('MTN')"
+                        class="btn btn-lg rounded-4 border-0 pay-btn transition d-flex align-items-center justify-content-between px-4 py-3"
+                        style="background-color: #ffcc00; color: black;">
+                        <span class="fw-bold">MTN MoMo</span>
+                        <i data-lucide="smartphone"></i>
+                    </button>
+                    <button onclick="processCheckout('Cash')"
+                        class="btn btn-lg btn-dark rounded-4 border-0 pay-btn transition d-flex align-items-center justify-content-between px-4 py-3">
+                        <span class="fw-bold">Espèces</span>
+                        <i data-lucide="banknote"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <button
+                    class="btn btn-outline-danger w-100 rounded-pill fw-bold py-2 border-2 d-flex align-items-center justify-content-center gap-2"
+                    onclick="clearCart()">
+                    <i data-lucide="trash-2" size="18"></i> Vider le panier
+                </button>
+                <div class="mt-4 pt-4 border-top">
+                    <div class="d-flex align-items-center gap-3 text-muted small">
+                        <i data-lucide="shield-check" size="16"></i>
+                        Transaction sécurisée & Auditée
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --pos-primary: #6366f1;
+        --pos-bg: #f8fafc;
+        --pos-card-bg: #ffffff;
+    }
+
+    body {
+        background-color: var(--pos-bg);
+    }
+
+    .transition {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .pay-btn {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pay-btn:active {
+        transform: scale(0.98);
+    }
+
+    .catalog-item {
+        border: 1px solid transparent !important;
+        background: var(--pos-card-bg);
+    }
+
+    .catalog-item:hover {
+        transform: translateY(-5px);
+        border-color: var(--pos-primary) !important;
+        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.1) !important;
+    }
+
+    .btn-qty {
+        width: 36px;
+        height: 36px;
+        border: 1.5px solid #e2e8f0 !important;
+        background: white !important;
+        color: #475569 !important;
+    }
+
+    .btn-qty:hover {
+        background: var(--pos-primary) !important;
+        color: white !important;
+        border-color: var(--pos-primary) !important;
+    }
+
+    /* Animation for adding to cart */
+    @keyframes addToCartAnim {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+            background-color: #ecfdf5;
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .cart-flash {
+        animation: addToCartAnim 0.4s ease;
+    }
+
+    #searchResults {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .smaller {
+        font-size: 0.7rem;
+        letter-spacing: 0.02em;
+    }
+
+    .sticky-bottom-summary {
+        backdrop-filter: blur(8px);
+        background: rgba(255, 255, 255, 0.8) !important;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let catalog = [];
+    let cart = [];
+
+    // Format number to currency
+    const formatGNF = (num) => new Intl.NumberFormat('fr-FR').format(num) + ' GNF';
+
+    // Fetch Meds on Load
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const res = await fetch('/pos/api/medicines');
+            catalog = await res.json();
+            renderCatalogGrid();
+        } catch (e) {
+            showAlert("Erreur de chargement du catalogue", "danger");
+        }
+    });
+
+    function renderCatalogGrid(items = null) {
+        const grid = document.getElementById('catalogGrid');
+        grid.innerHTML = '';
+        const toRender = items || catalog;
+
+        if (toRender.length === 0) {
+            grid.innerHTML = '<div class="col-12 text-center text-muted py-3 small">Aucun produit disponible</div>';
+            return;
+        }
+
+        toRender.forEach(med => {
+            if (med.available_qty > 0) {
+                const col = document.createElement('div');
+                col.className = 'col-sm-4 col-md-3';
+                col.innerHTML = `
+                    <div class="card h-100 border-0 shadow-sm rounded-3 p-2 text-center transition catalog-item" onclick="addToCartById(${med.id})">
+                        <div class="small fw-bold text-truncate" title="${med.name}">${med.name}</div>
+                        <div class="text-primary smaller fw-bold">${formatGNF(med.price)}</div>
+                        <div class="badge bg-white text-muted border smaller mt-1">Stock: ${med.available_qty}</div>
+                    </div>
+                `;
+                grid.appendChild(col);
+            }
+        });
+    }
+
+    function addToCartById(id) {
+        const med = catalog.find(m => m.id === id);
+        if (med) addToCart(med);
+    }
+
+    // Cart Logic
+    function addToCart(med) {
+        const existing = cart.find(i => i.medicine_id === med.id);
+        if (existing) {
+            if (existing.quantity < med.available_qty) {
+                existing.quantity++;
+            } else {
+                showAlert(`⚠️ Stock limité pour ${med.name}`, "warning");
+            }
+        } else {
+            cart.push({
+                medicine_id: med.id,
+                name: med.name,
+                price: med.price,
+                quantity: 1,
+                max_qty: med.available_qty
+            });
+        }
+        renderCart(med.id); // Pass ID to trigger animation
+    }
+
+    function updateQty(id, delta) {
+        const item = cart.find(i => i.medicine_id === id);
+        if (item) {
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(i => i.medicine_id !== id);
+            } else if (item.quantity > item.max_qty) {
+                item.quantity = item.max_qty;
+                showAlert("Impossible de dépasser le stock disponible.", "warning");
+            }
+        }
+        renderCart();
+    }
+
+    function clearCart() {
+        if (confirm('Voulez-vous annuler toute la vente en cours ?')) {
+            cart = [];
+            renderCart();
+        }
+    }
+
+    // Instant Search Implementation
+    const searchInput = document.getElementById('productSearch');
+    const searchResults = document.getElementById('searchResults');
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (query.length < 1) {
+            searchResults.classList.add('d-none');
+            return;
+        }
+
+        const matches = catalog.filter(m =>
+            m.name.toLowerCase().includes(query) ||
+            (m.barcode && m.barcode.includes(query))
+        );
+
+        renderSearchResults(matches);
+        renderCatalogGrid(matches); // Also filter the grid for better UX
+    });
+
+
+    function renderSearchResults(matches) {
+        searchResults.innerHTML = '';
+        if (matches.length === 0) {
+            searchResults.innerHTML = '<div class="p-4 text-center text-muted">Aucun produit trouvé</div>';
+        } else {
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item d-flex justify-content-between align-items-center p-3 border-bottom';
+                div.innerHTML = `
+                    <div>
+                        <div class="fw-bold">${m.name}</div>
+                        <div class="small text-muted">Stock: ${m.available_qty} • ${formatGNF(m.price)}</div>
+                    </div>
+                    <button class="btn btn-sm btn-primary rounded-pill px-3">Ajouter</button>
+                `;
+                div.onclick = () => {
+                    addToCart(m);
+                    searchInput.value = '';
+                    searchResults.classList.add('d-none');
+                };
+                searchResults.appendChild(div);
+            });
+        }
+        searchResults.classList.remove('d-none');
+    }
+
+    // Close search results when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.classList.add('d-none');
+        }
+    });
+
+    function renderCart(animateId = null) {
+        const body = document.getElementById('cartTableBody');
+        const emptyMsg = document.getElementById('emptyCartMessage');
+        const totalSpan = document.getElementById('cartTotal');
+        const countSpan = document.getElementById('cartItemCount');
+
+        body.innerHTML = '';
+        let total = 0;
+        let count = 0;
+
+        if (cart.length === 0) {
+            emptyMsg.style.display = 'block';
+        } else {
+            emptyMsg.style.display = 'none';
+            cart.forEach(item => {
+                total += item.price * item.quantity;
+                count += item.quantity;
+                const tr = document.createElement('tr');
+                tr.className = `border-bottom transition ${animateId === item.medicine_id ? 'cart-flash' : ''}`;
+                tr.innerHTML = `
+                    <td class="px-4 py-3">
+                        <div class="fw-bold text-dark">${item.name}</div>
+                        <div class="text-muted smaller">STOCK DISPO: ${item.max_qty} UNITÉS</div>
+                    </td>
+                    <td class="py-3">
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <button class="btn btn-sm rounded-circle btn-qty d-flex align-items-center justify-content-center" onclick="updateQty(${item.medicine_id}, -1)">
+                                <i data-lucide="minus" size="14"></i>
+                            </button>
+                            <span class="fw-bold fs-5 text-primary" style="min-width:35px; text-align:center;">${item.quantity}</span>
+                            <button class="btn btn-sm rounded-circle btn-qty d-flex align-items-center justify-content-center" onclick="updateQty(${item.medicine_id}, 1)">
+                                <i data-lucide="plus" size="14"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="py-3 text-end text-muted small">${formatGNF(item.price)}</td>
+                    <td class="px-4 py-3 text-end fw-bold text-dark fs-5">${formatGNF(item.price * item.quantity)}</td>
+                    <td class="py-3 text-center">
+                         <button class="btn btn-link text-danger p-0 opacity-50 hover-opacity-100" onclick="updateQty(${item.medicine_id}, -999)">
+                             <i data-lucide="trash-2" size="18"></i>
+                         </button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        totalSpan.textContent = formatGNF(total);
+        countSpan.textContent = count;
+        lucide.createIcons();
+    }
+
+    // Checkout process
+    async function processCheckout(method) {
+        if (cart.length === 0) {
+            showAlert("Le panier est vide.", "warning");
+            return;
+        }
+
+        // Disable buttons
+        document.querySelectorAll('.pay-btn').forEach(b => b.disabled = true);
+
+        const payload = {
+            payment_method: method,
+            items: cart.map(i => ({ medicine_id: i.medicine_id, quantity: i.quantity }))
+        };
+
+        try {
+            const res = await fetch('/pos/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                // Success
+                cart = [];
+                renderCart();
+                showAlert(`💰 ${data.message} ${formatGNF(data.total_gnf)}`, "success");
+
+                // Open invoice in new tab automatically
+                window.open('/pos/invoice/' + data.sale_id, '_blank');
+
+                // Recharge DB limits
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert(`❌ Erreur FEFO: ${data.error}`, "danger");
+            }
+        } catch (e) {
+            showAlert("Erreur de connexion au serveur", "danger");
+        } finally {
+            document.querySelectorAll('.pay-btn').forEach(b => b.disabled = false);
+        }
+    }
+
+    // UI helper for alerts
+    function showAlert(msg, type) {
+        const c = document.getElementById('alertContainer');
+        c.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+                           ${msg}
+                           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                       </div>`;
+        setTimeout(() => { c.innerHTML = ''; }, 5000);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+/* Styles pour l'impression PDF */
+@media print {
+    .btn, .modal, .no-print, nav, .navbar, .sidebar, footer, .modal-backdrop {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    body {
+        background-color: white !important;
+        font-size: 12pt;
+    }
+    
+    .container {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Forcer l'affichage du titre de la pharmacie */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+}
+
+.print-header {
+    display: none;
+}

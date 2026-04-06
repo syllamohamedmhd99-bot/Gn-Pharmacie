@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture #VN-{{ "%05d" % sale.id }}</title>
+    <!-- Use a system font stack to ensure reliability for PDF generation -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .receipt {
+            background-color: white;
+            width: 80mm;
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 24px;
+            color: #4338ca;
+            letter-spacing: -1px;
+            margin-bottom: 5px;
+        }
+
+        .info {
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .divider {
+            border-top: 1px dashed #e5e7eb;
+            margin: 15px 0;
+        }
+
+        .meta {
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin: 20px 0;
+        }
+
+        .items-table th {
+            text-align: left;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+        }
+
+        .items-table td {
+            padding: 8px 0;
+            vertical-align: top;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .item-meta {
+            font-size: 10px;
+            color: #9ca3af;
+        }
+
+        .total-section {
+            margin-top: 15px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .grand-total {
+            font-size: 18px;
+            font-weight: 800;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #111827;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 10px;
+            color: #9ca3af;
+        }
+
+        .actions-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: #4338ca;
+            color: white;
+            box-shadow: 0 4px 12px rgba(67, 56, 202, 0.3);
+        }
+
+        .btn-outline {
+            background-color: white;
+            color: #4338ca;
+            border: 1px solid #4338ca;
+        }
+
+        .btn-light {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .receipt {
+                box-shadow: none;
+                width: 100%;
+            }
+
+            .actions-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="actions-container">
+        <button class="btn btn-primary" onclick="window.print()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Imprimer
+        </button>
+        <button class="btn btn-outline" id="downloadPdf">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            PDF
+        </button>
+        <a href="{{ url_for('pos.history') }}" class="btn btn-light">Retour</a>
+    </div>
+
+    <div class="receipt" id="invoice">
+        <div class="header">
+            <div class="logo">PHARMA CLOUD</div>
+            <div class="info">
+                SYLLA & CO PHARMACEUTIQUE<br>
+                Camine 2, Conakry, Guinée<br>
+                TC: +224 612 34 56 78
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="meta">
+            <span>Ticket:</span>
+            <span style="font-weight: 700;">#VN{{ "%05d" % sale.id }}</span>
+        </div>
+        <div class="meta">
+            <span>Date:</span>
+            <span>{{ sale.timestamp.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <div class="meta">
+            <span>Vendeur:</span>
+            <span>{{ "Admin" if sale.user_id == 1 else "Vendeur #" ~ sale.user_id }}</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th width="15%">Qté</th>
+                    <th>Article</th>
+                    <th style="text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale.items %}
+                <tr>
+                    <td>{{ item.quantity }}</td>
+                    <td>
+                        <div class="item-name">{{ item.batch.medicine.name }}</div>
+                        <div class="item-meta">Lot: {{ item.batch.batch_number }}</div>
+                    </td>
+                    <td style="text-align: right;">{{ "{:,.0f}".format(item.quantity *
+                        item.batch.medicine.default_price).replace(',', ' ') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="divider"></div>
+
+        <div class="total-section">
+            <div class="total-row">
+                <span>Paiement:</span>
+                <span class="fw-bold">{{ sale.payment_method }}</span>
+            </div>
+            <div class="total-row grand-total">
+                <span>TOTAL:</span>
+                <span style="font-weight: 800;">{{ "{:,.0f}".format(sale.total_amount).replace(',', ' ') }} GNF</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>*** MERCI DE VOTRE CONFIANCE ***</p>
+            <p>Les médicaments ne sont ni repris ni échangés.</p>
+            <p style="margin-top: 10px;">Propulsé par PharmaCloud ERP</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        document.getElementById('downloadPdf').addEventListener('click', function () {
+            const element = document.getElementById('invoice');
+            const opt = {
+                margin: 5,
+                filename: 'Facture_VN{{ "%05d" % sale.id }}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        });
+    </script>
+</body>
+
+</html>

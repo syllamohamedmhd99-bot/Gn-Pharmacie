@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Historique des Ventes - PharmaCloud{% endblock %}
+{% block header %}Historique des Ventes{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h4 class="fw-bold text-dark mb-0">Registre des Transactions</h4>
+        <a href="{{ url_for('pos.terminal') }}" class="btn btn-primary rounded-pill px-4 shadow-sm shadow-hover">
+            <i data-lucide="shopping-cart" class="me-2" style="width: 18px;"></i> Nouveau Panier
+        </a>
+    </div>
+</div>
+
+<div class="card p-4 shadow-sm border-0 rounded-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 gap-3 flex-wrap">
+        <div class="position-relative flex-grow-1" style="max-width: 400px;">
+            <i data-lucide="search" class="position-absolute translate-middle-y text-muted"
+                style="top: 50%; left: 15px; width: 18px;"></i>
+            <input type="text" id="historySearch" class="form-control rounded-pill border-light ps-5 bg-light"
+                placeholder="Chercher une facture, un montant, un mode...">
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="location.reload()">
+                <i data-lucide="refresh-cw" style="width: 14px;"></i> Actualiser
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light border-0">
+                <tr class="small text-muted text-uppercase fw-bold">
+                    <th class="ps-4 border-0">Facture</th>
+                    <th class="border-0">Date & Heure</th>
+                    <th class="border-0">Vendeur</th>
+                    <th class="border-0">Paiement</th>
+                    <th class="border-0">Montant Total</th>
+                    <th class="text-end pe-4 border-0">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                {% for sale in sales %}
+                <tr class="sale-row border-bottom transition-all">
+                    <td class="ps-4">
+                        <span class="badge bg-white text-dark fw-bold border shadow-xs px-3 py-2">
+                            #VN-{{ "%05d" % sale.id }}
+                        </span>
+                    </td>
+                    <td class="text-secondary small">
+                        {{ sale.timestamp.strftime('%d/%m/%Y') }}<br>
+                        <strong>{{ sale.timestamp.strftime('%H:%M') }}</strong>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-indigo-subtle text-indigo rounded-circle d-flex justify-content-center align-items-center fw-bold"
+                                style="width: 32px; height: 32px; font-size: 11px; background-color: #e0e7ff; color: #4338ca;">
+                                {{ sale.user_id if sale.user_id else '?' }}
+                            </div>
+                            <span class="small fw-medium">{{ "Administrateur" if sale.user_id == 1 else "Vendeur #" ~
+                                sale.user_id }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if sale.payment_method == 'OrangeMoney' %}
+                        <span class="badge rounded-pill px-3" style="background-color: #ff7900;">Orange Money</span>
+                        {% elif sale.payment_method == 'MTN' %}
+                        <span class="badge rounded-pill px-3 bg-warning text-dark border border-warning-subtle">MTN
+                            MoMo</span>
+                        {% else %}
+                        <span
+                            class="badge rounded-pill px-3 bg-success-subtle text-success border border-success-subtle">Espèces</span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold text-dark">{{ "{:,.0f}".format(sale.total_amount).replace(',', ' ') }} GNF</td>
+                    <td class="text-end pe-4">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/pos/invoice/{{ sale.id }}" target="_blank"
+                                class="btn btn-sm btn-white border rounded-pill px-3 shadow-xs hover-primary transition"
+                                title="Voir Facture">
+                                <i data-lucide="printer" class="me-1" style="width: 14px;"></i> Ticket
+                            </a>
+                            {% if current_user.role == 'Admin' %}
+                            <form action="/pos/sale/delete/{{ sale.id }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Attention: Cela va supprimer cette vente et restocker les produits. Continuer ?');">
+                                <button type="submit"
+                                    class="btn btn-sm btn-outline-danger rounded-circle p-2 transition" title="Annuler">
+                                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr id="emptyRow">
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted opacity-50 mb-2">
+                            <i data-lucide="database" size="48"></i>
+                        </div>
+                        <h6 class="text-muted">Aucune transaction trouvée</h6>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .shadow-xs {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .transition-all {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .sale-row:hover {
+        background-color: #f8fafc !important;
+        transform: scale(1.002);
+    }
+
+    .hover-primary:hover {
+        color: #4338ca !important;
+        border-color: #4338ca !important;
+    }
+</style>
+
+<script>
+    document.getElementById('historySearch').addEventListener('input', function (e) {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        let visibleCount = 0;
+        document.querySelectorAll('.sale-row').forEach(row => {
+            const text = row.innerText.toLowerCase();
+            const isVisible = text.includes(searchTerm);
+            row.style.display = isVisible ? '' : 'none';
+            if (isVisible) visibleCount++;
+        });
+
+        const emptyRow = document.getElementById('emptyRow');
+        if (emptyRow) {
+            emptyRow.style.display = (visibleCount === 0) ? '' : 'none';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
+{% endblock %}

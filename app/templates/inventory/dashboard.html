@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Inventaire FEFO - PharmaCloud{% endblock %}
+{% block header %}Gestion des Stocks & Lots (FEFO){% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card p-4 bg-danger text-white shadow-sm border-0">
+            <div class="text-white-50 small fw-bold mb-1">PRODUITS PÉRIMÉS</div>
+            <div class="h2 fw-bold mb-0">
+                {{ batches | selectattr('expiry_date', 'lt', today_date) | list | length }}
+            </div>
+            <p class="small mt-2 mb-0">Retraits obligatoires à effectuer</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 bg-warning text-dark border-0 shadow-sm">
+            <div class="text-dark-50 small fw-bold mb-1">STOCK MÉDICAMENTS (CATALOGUE)</div>
+            <div class="h2 fw-bold mb-0">{{ medicines | length }}</div>
+            <p class="small mt-2 mb-0">Produits référencés</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="text-muted small fw-bold mb-1">VALEUR DU STOCK BONS LOTS</div>
+            <div class="h2 fw-bold mb-0 text-success">{{ "{:,.0f}".format(total_value) }} <small
+                    class="fs-6 text-muted">GNF</small></div>
+            <p class="small mt-2 mb-0 text-muted">Prix d'achat (estimatif base)</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Colonne Médicaments (Catalogue) -->
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="fw-bold mb-0">Catalogue Médicaments</h6>
+                <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal"
+                    data-bs-target="#newMedicineModal">+ Produit</button>
+            </div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Stock Total</th>
+                            <th>Prix Réf.</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for med in medicines %}
+                        <tr>
+                            <td class="fw-bold">{{ med.name }}</td>
+                            <td>
+                                <span
+                                    class="fw-bold {% if med.total_stock <= med.min_stock_level %}text-danger{% else %}text-success{% endif %}">
+                                    {{ med.total_stock }}
+                                </span>
+                                {% if med.total_stock <= med.min_stock_level %} <i data-lucide="alert-circle"
+                                    class="text-danger ms-1" style="width: 14px;" title="Stock Faible"></i>
+                                    {% endif %}
+                            </td>
+                            <td>{{ "{:,.0f}".format(med.default_price) }}</td>
+                            <td class="text-end">
+                                <form action="{{ url_for('inventory.delete_medicine', id=med.id) }}" method="POST"
+                                    class="d-inline"
+                                    onsubmit="return confirm('Supprimer ce médicament et TOUS ses lots ?');">
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0"><i
+                                            data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-muted text-center py-3">Catalogue vide</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Colonne Lots (FEFO) -->
+    <div class="col-md-8">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Inventaire par Lots (Ordre FEFO)</h5>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('inventory.suppliers') }}"
+                        class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                        <i class="fas fa-truck me-1"></i> Fournisseurs
+                    </a>
+                    <button class="btn btn-success btn-sm rounded-pill px-3" data-bs-toggle="modal"
+                        data-bs-target="#newBatchModal">+ Entrée Lot</button>
+                </div>
+            </div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Médicament</th>
+                            <th>N° de Lot</th>
+                            <th>Expiration</th>
+                            <th>Qté Restante</th>
+                            <th>Statut FEFO</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for batch in batches %}
+                        {% set is_expired = batch.expiry_date < today_date %} {% set is_near=batch.expiry_date <
+                            near_date and not is_expired %} <tr
+                            class="{% if is_expired %}table-danger opacity-75{% endif %}">
+                            <td>
+                                <div class="fw-bold">{{ batch.medicine.name }}</div>
+                            </td>
+                            <td><code>{{ batch.batch_number }}</code></td>
+                            <td>
+                                <div
+                                    class="fw-bold {% if is_expired %}text-danger{% elif is_near %}text-warning{% endif %}">
+                                    {{ batch.expiry_date.strftime('%d/%m/%Y') }}
+                                </div>
+                            </td>
+                            <td>{{ batch.quantity }}</td>
+                            <td>
+                                {% if is_expired %}
+                                <span class="badge bg-danger rounded-pill">PÉRIMÉ</span>
+                                {% elif is_near %}
+                                <span class="badge bg-warning text-dark rounded-pill">ALERTE M+1</span>
+                                {% else %}
+                                <span class="badge bg-success-subtle text-success rounded-pill">Stock Sain</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form action="{{ url_for('inventory.delete_batch', id=batch.id) }}" method="POST"
+                                    class="d-inline" onsubmit="return confirm('Retirer ce lot du stock ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger p-1"><i
+                                            data-lucide="trash-2" style="width: 16px; height: 16px;"></i></button>
+                                </form>
+                            </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-muted text-center py-4">Aucun lot en stock.</td>
+                            </tr>
+                            {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nouveau Médicament -->
+<div class="modal fade" id="newMedicineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('inventory.add_medicine') }}" method="POST">
+                <div class="modal-header bg-light border-0">
+                    <h5 class="modal-title fw-bold">Nouveau Produit au Catalogue</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nom du médicament</label>
+                        <input type="text" name="name" class="form-control" required placeholder="ex: Doliprane 1000mg">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Prix de vente unitaire (GNF)</label>
+                        <input type="number" step="100" name="price" class="form-control" required
+                            placeholder="ex: 15000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Seuil d'alerte Stock Faible</label>
+                        <input type="number" name="min_stock" class="form-control" value="10" required>
+                        <div class="form-text">Le système vous alertera quand le stock sera inférieur à ce nombre.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Code-barres (Optionnel)</label>
+                        <input type="text" name="barcode" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none"
+                        data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Créer Produit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nouveau Lot -->
+<div class="modal fade" id="newBatchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('inventory.add_batch') }}" method="POST">
+                <div class="modal-header bg-light border-0">
+                    <h5 class="modal-title fw-bold">Entrée d'un Nouveau Lot</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Sélectionner le Produit</label>
+                        <select name="medicine_id" class="form-select" required>
+                            <option value="">Choisir un produit...</option>
+                            {% for med in medicines %}
+                            <option value="{{ med.id }}">{{ med.name }} - {{ "{:,.0f}".format(med.default_price) }} GNF
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">N° de Lot (Tracer FEFO)</label>
+                        <input type="text" name="batch_number" class="form-control" required placeholder="ex: LOT-A45">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold">Quantité</label>
+                            <input type="number" name="quantity" class="form-control" required min="1"
+                                placeholder="Nb boîtes">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold text-danger">Date d'Expiration</label>
+                            <input type="date" name="expiry_date" class="form-control border-danger" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none"
+                        data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4">Ajouter au Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

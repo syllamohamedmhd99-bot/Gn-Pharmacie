@@ -1,0 +1,67 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Connexion - PharmaCloud{% endblock %}
+
+{% block content %}
+<div class="auth-card shadow-lg p-5 bg-white rounded-4 border-0">
+    <div class="text-center mb-4">
+        <i data-lucide="heart-pulse" class="text-primary mb-2" style="width: 48px; height: 48px;"></i>
+        <h3 class="fw-bold text-dark">Espace Sécurisé</h3>
+        <p class="text-muted small">Veuillez vous identifier pour accéder au terminal</p>
+    </div>
+
+    <form action="{{ url_for('auth.login') }}" method="POST">
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">ADRESSE EMAIL</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="mail" size="18"></i></span>
+                <input type="email" name="email" class="form-control bg-light border-0 py-2"
+                    placeholder="pharmacien@exemple.com" required>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">MOT DE PASSE</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="lock" size="18"></i></span>
+                <input type="password" name="password" class="form-control bg-light border-0 py-2"
+                    placeholder="••••••••" required>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                <label class="form-check-label text-muted small" for="remember">Se souvenir de moi</label>
+            </div>
+            <a href="#" class="text-primary small text-decoration-none">Oublié ?</a>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm rounded-3">
+            SE CONNECTER
+        </button>
+    </form>
+
+    <div class="text-center mt-4">
+        <p class="text-muted small">Nouveau collaborateur ? <a href="{{ url_for('auth.register') }}"
+                class="text-primary fw-bold text-decoration-none">S'inscrire</a></p>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        max-width: 450px;
+        width: 100%;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

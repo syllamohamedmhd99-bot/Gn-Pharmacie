@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard RH - PharmaCloud{% endblock %}
+{% block header %}Ressources Humaines & Plannings{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="text-muted small fw-bold mb-1"><i data-lucide="users" class="me-1"></i> EFFECTIF</div>
+            <div class="h2 fw-bold mb-0 text-primary">{{ users|length }}</div>
+            <div class="text-muted small mt-2">Employés enregistrés</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-4 shadow-sm border-0">
+            <div class="text-muted small fw-bold mb-1"><i data-lucide="calendar" class="me-1"></i> SHIFTS A VENIR</div>
+            <div class="h2 fw-bold mb-0">{{ shifts|length }}</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 shadow-sm border-0 h-100 d-flex justify-content-center bg-primary text-white text-center">
+            <h5 class="fw-bold mb-1">Terminal de Pointage</h5>
+            <p class="mb-0 small text-white-50">Localisation IP sécurisée activée</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- COLONNE PLANNING -->
+    <div class="col-md-8">
+        <div class="card p-4 h-100 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Planning des Équipes</h5>
+                <button class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
+                    data-bs-target="#addShiftModal">
+                    <i data-lucide="plus" style="width: 16px;"></i> Gérer les Shifts
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employé</th>
+                            <th>Date prévue</th>
+                            <th>Horaires</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shift in shifts %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ shift.user.first_name }} {{ shift.user.last_name }}</div>
+                                <div class="text-muted small">{{ shift.user.role }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ shift.date.strftime('%d/%m/%Y') }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border p-2">
+                                    {{ shift.start_time.strftime('%H:%M') }} - {{ shift.end_time.strftime('%H:%M') }}
+                                </span>
+                            </td>
+                            <td><span
+                                    class="badge bg-success-subtle text-success border border-success-subtle">Planifié</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-5">
+                                <i data-lucide="calendar-x" class="mb-2 text-black-50"
+                                    style="width: 32px; height: 32px;"></i><br>
+                                Aucun shift planifié pour le moment.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLONNE POINTEUSE -->
+    <div class="col-md-4">
+        <div class="card p-4 text-center shadow-sm border-0 h-100">
+            <h5 class="fw-bold mb-4">Kiosque de Pointage</h5>
+            <div class="py-2">
+                <div class="display-3 fw-bold text-dark mb-1" id="clock">--:--</div>
+                <p class="text-muted mb-4" id="currentDateStr">Aujourd'hui</p>
+                <hr class="opacity-10 mb-4">
+                <form action="/hr/timeclock" method="POST">
+                    <div class="mb-4 text-start">
+                        <label class="form-label text-muted fw-bold">1. Identifiez-vous :</label>
+                        <select name="user_id" class="form-select form-select-lg" required>
+                            <option value="">-- Sélectionnez votre profil --</option>
+                            {% for u in users %}
+                            <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }} ({{ u.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-4 fw-bold shadow-sm"
+                        style="font-size: 1.1rem; transition: transform 0.2s; background: linear-gradient(135deg, #0d6efd, #0b5ed7);">
+                        <i data-lucide="scan-line" class="me-2 mb-1"></i> JE POINTE MON BADGE
+                    </button>
+                    <p class="small text-muted mt-3 mb-0">Le système détecte automatiquement s'il s'agit d'une entrée ou
+                        d'une sortie.</p>
+                </form>
+            </div>
+
+            <div class="mt-auto px-2">
+                <hr class="opacity-10">
+                <div class="text-start">
+                    <div class="small text-muted fw-bold mb-2">DERNIERS PASSAGES VALIDÉS :</div>
+                    {% for clock in recent_clocks[:3] %}
+                    <div class="d-flex justify-content-between align-items-center mb-1 small">
+                        <span class="fw-bold text-dark">{{ clock.user.first_name }}</span>
+                        <span>
+                            <span class="text-muted me-2">{{ clock.timestamp.strftime('%H:%M') }}</span>
+                            {% if clock.action_type == 'IN' %}
+                            <span class="badge bg-success">IN</span>
+                            {% else %}
+                            <span class="badge bg-danger">OUT</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="small text-muted">Aucun pointage récent.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ajout Shift -->
+<div class="modal fade" id="addShiftModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="/hr/shift/add" method="POST">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Planifier un Shift</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Employé</label>
+                        <select name="user_id" class="form-select" required>
+                            {% for u in users %}
+                            <option value="{{ u.id }}">{{ u.first_name }} {{ u.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Heure de début</label>
+                            <input type="time" name="start_time" class="form-control" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Heure de fin</label>
+                            <input type="time" name="end_time" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer le shift</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateClock() {
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('clock').innerText = time;
+    }
+    setInterval(updateClock, 1000);
+</script>
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Annuaire & Paie - PharmaCloud{% endblock %}
+{% block header %}Annuaire des Employés{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Gestion du Personnel (Annuaire)</h5>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('hr.payroll_history') }}" class="btn btn-outline-success rounded-pill px-4">
+            <i data-lucide="history" class="me-2" style="width: 16px;"></i> Historique Paie
+        </a>
+        <button class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+            <i data-lucide="plus" class="me-2 text-white" style="width: 16px;"></i> Ajouter Employé
+        </button>
+    </div>
+</div>
+
+<div class="card p-4 shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Photo</th>
+                    <th>Identité</th>
+                    <th>Contact (Email)</th>
+                    <th>Rôle / Contrat</th>
+                    <th>Date d'Embauche</th>
+                    <th>Heures Mensuelles</th>
+                    <th>Avances (GNF)</th>
+                    <th>Statut Compte</th>
+                    <th class="text-end">Base Salariale / Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        <div class="position-relative d-inline-block">
+                            {% if u.image_url %}
+                            <img src="{{ url_for('static', filename=u.image_url) }}"
+                                class="rounded-circle object-fit-cover"
+                                style="width: 45px; height: 45px; border: 1px solid #e2e8f0;">
+                            {% else %}
+                            <div class="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                                style="width: 45px; height: 45px; font-size: 0.8rem; border: 1px solid #e2e8f0;">
+                                {{ u.first_name[0] if u.first_name else '?' }}{{ u.last_name[0] if u.last_name else ''
+                                }}
+                            </div>
+                            {% endif %}
+                            <button
+                                class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 p-0 d-flex align-items-center justify-content-center shadow-sm"
+                                style="width: 18px; height: 18px; margin-bottom: -2px; margin-right: -2px;"
+                                data-bs-toggle="modal" data-bs-target="#uploadPhoto{{ u.id }}">
+                                <i data-lucide="camera" style="width: 10px;"></i>
+                            </button>
+                        </div>
+
+                        <!-- Modal Upload Photo -->
+                        <div class="modal fade" id="uploadPhoto{{ u.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-sm">
+                                <div class="modal-content">
+                                    <form action="{{ url_for('hr.upload_photo', user_id=u.id) }}" method="POST"
+                                        enctype="multipart/form-data">
+                                        <div class="modal-header">
+                                            <h6 class="modal-title">Photo de profil</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <input type="file" name="photo" class="form-control mb-3" accept="image/*"
+                                                required>
+                                            <button type="submit" class="btn btn-primary w-100">Uploader</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div>
+                                <div class="fw-bold">{{ u.first_name }} {{ u.last_name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        <span class="badge bg-primary">{{ u.role }}</span>
+                        {% if u.contract_type %}
+                        <span class="badge bg-light text-dark border">{{ u.contract_type }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.hire_date.strftime('%d/%m/%Y') if u.hire_date else 'N/A' }}</td>
+                    <td>
+                        <span class="fw-bold">{{ u.monthly_hours }} h</span>
+                    </td>
+                    <td>
+                        {% set pending_adv = u.advances | selectattr('status', 'equalto', 'Pending') |
+                        map(attribute='amount') | sum %}
+                        {% if pending_adv > 0 %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">- {{
+                            "{:,.0f}".format(pending_adv) }}</span>
+                        {% else %}
+                        <span class="text-muted">0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                        <span
+                            class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">ACTIF</span>
+                        {% else %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2">EN
+                            ATTENTE</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex align-items-center justify-content-end gap-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm"
+                                data-bs-toggle="modal" data-bs-target="#permissionModal{{ u.id }}">
+                                <i data-lucide="shield-check" class="me-1" style="width: 14px;"></i> Accès
+                            </button>
+
+                            <form action="{{ url_for('hr.process_payroll', user_id=u.id) }}" method="POST"
+                                class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
+                                    <i data-lucide="banknote" class="me-1" style="width: 14px;"></i> Payer
+                                </button>
+                            </form>
+
+                            <form action="{{ url_for('hr.toggle_user_status', user_id=u.id) }}" method="POST"
+                                class="d-inline">
+                                <button type="submit"
+                                    class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-success{% endif %} rounded-pill px-3 shadow-sm">
+                                    {% if u.is_active %}Bloquer{% else %}Activer{% endif %}
+                                </button>
+                            </form>
+                            <form action="{{ url_for('hr.delete_user', user_id=u.id) }}" method="POST"
+                                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ? Cette action est irréversible.')">
+                                <button type="submit"
+                                    class="btn btn-sm btn-light text-danger rounded-circle p-2 shadow-sm"
+                                    title="Supprimer">
+                                    <i data-lucide="trash-2" style="width: 16px;"></i>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Modal Permissions -->
+                        <div class="modal fade" id="permissionModal{{ u.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-sm">
+                                <form action="{{ url_for('hr.update_permissions', user_id=u.id) }}" method="POST">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header bg-light border-0">
+                                            <h6 class="modal-title fw-bold">Permissions : {{ u.first_name }}</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" name="can_view_pos"
+                                                    id="pos{{ u.id }}" {% if u.can_view_pos %}checked{% endif %}>
+                                                <label class="form-check-label" for="pos{{ u.id }}">Caisse /
+                                                    Vente</label>
+                                            </div>
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox"
+                                                    name="can_view_inventory" id="inv{{ u.id }}" {% if
+                                                    u.can_view_inventory %}checked{% endif %}>
+                                                <label class="form-check-label" for="inv{{ u.id }}">Stock & FEFO</label>
+                                            </div>
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox" name="can_view_hr"
+                                                    id="hr{{ u.id }}" {% if u.can_view_hr %}checked{% endif %}>
+                                                <label class="form-check-label" for="hr{{ u.id }}">RH & Planning</label>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" name="can_view_admin"
+                                                    id="adm{{ u.id }}" {% if u.can_view_admin %}checked{% endif %}>
+                                                <label class="form-check-label" for="adm{{ u.id }}">Section
+                                                    Admin</label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0 p-3 bg-light">
+                                            <button type="submit"
+                                                class="btn btn-primary btn-sm rounded-pill w-100">Enregistrer</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">Aucun employé dans l'annuaire.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Ajout Employé -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="/hr/employee/add" method="POST">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Nouvel Employé</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prénom</label>
+                            <input type="text" name="first_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nom</label>
+                            <input type="text" name="last_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Adresse Email (Identifiant)</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mot de Passe par défaut</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" name="phone" class="form-control" placeholder="+224 ...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Adresse</label>
+                            <input type="text" name="address" class="form-control" placeholder="Conakry, ...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Poste / Rôle</label>
+                            <select name="role" class="form-select" required>
+                                <option value="Pharmacien">Pharmacien</option>
+                                <option value="Vendeur">Vendeur</option>
+                                <option value="Stagiaire">Stagiaire</option>
+                                <option value="Admin">Administrateur</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Type de Contrat</label>
+                            <select name="contract_type" class="form-select" required>
+                                <option value="CDI">CDI</option>
+                                <option value="CDD">CDD</option>
+                                <option value="Stage">Stage</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Salaire de Base (GNF)</label>
+                            <input type="number" step="1000" name="base_salary" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

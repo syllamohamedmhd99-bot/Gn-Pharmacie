@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Mon Profil - PharmaCloud ERP{% endblock %}
+{% block header %}Paramètres du Profil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <!-- Carte Photo de Profil -->
+        <div class="card p-4 text-center shadow-sm border-0 mb-4">
+            <div class="position-relative d-inline-block mx-auto mb-3">
+                {% if current_user.image_url %}
+                <img src="{{ url_for('static', filename=current_user.image_url) }}"
+                    class="rounded-circle object-fit-cover shadow"
+                    style="width: 150px; height: 150px; border: 4px solid white;">
+                {% else %}
+                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold shadow"
+                    style="width: 150px; height: 150px; font-size: 3rem; border: 4px solid white;">
+                    {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
+                </div>
+                {% endif %}
+            </div>
+            <h5 class="fw-bold mb-1">{{ current_user.first_name }} {{ current_user.last_name }}</h5>
+            <p class="text-muted small">{{ current_user.role }}</p>
+            <div class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ current_user.email }}</div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Formulaire de modification -->
+        <div class="card p-4 shadow-sm border-0">
+            <h6 class="fw-bold mb-4">Informations Personnelles</h6>
+            <form action="{{ url_for('auth.profile') }}" method="POST" enctype="multipart/form-data">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Prénom</label>
+                        <input type="text" name="first_name" class="form-control rounded-3"
+                            value="{{ current_user.first_name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Nom</label>
+                        <input type="text" name="last_name" class="form-control rounded-3"
+                            value="{{ current_user.last_name }}" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Téléphone</label>
+                        <input type="text" name="phone" class="form-control rounded-3"
+                            value="{{ current_user.phone or '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Changer la Photo</label>
+                        <input type="file" name="photo" class="form-control rounded-3" accept="image/*">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Adresse</label>
+                    <textarea name="address" class="form-control rounded-3"
+                        rows="2">{{ current_user.address or '' }}</textarea>
+                </div>
+                <hr class="my-4 opacity-10">
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary rounded-pill px-5">
+                        <i data-lucide="save" class="me-2" style="width: 18px;"></i> Enregistrer les modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Historique Paie - PharmaCloud ERP{% endblock %}
+{% block header %}Historique des Paiements Salariaux{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">Registre des Paiements</h5>
+    <a href="{{ url_for('hr.directory') }}" class="btn btn-outline-primary rounded-pill px-4">
+        <i data-lucide="users" class="me-2" style="width: 16px;"></i> Retour Annuaire
+    </a>
+</div>
+
+<div class="card p-4 shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Employé</th>
+                    <th>Période</th>
+                    <th>Heures</th>
+                    <th>Salaire Base</th>
+                    <th>Total Versé</th>
+                    <th>Date de Paiement</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td class="fw-bold text-dark">{{ r.employee.first_name }} {{ r.employee.last_name }}</td>
+                    <td>{{ r.month }}/{{ r.year }}</td>
+                    <td>{{ r.worked_hours }} h</td>
+                    <td>{{ "{:,.0f}".format(r.base_salary) }} GNF</td>
+                    <td class="fw-bold text-success">{{ "{:,.0f}".format(r.total_paid) }} GNF</td>
+                    <td>{{ r.payment_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2">
+                            <!-- Voir Bulletin détaillé -->
+                            <a href="{{ url_for('hr.view_payslip', record_id=r.id) }}"
+                                class="btn btn-sm btn-outline-primary rounded-pill">
+                                <i data-lucide="file-text" style="width: 14px;"></i> Bulletin
+                            </a>
+
+                            <!-- Upload de preuve -->
+                            <button class="btn btn-sm btn-outline-info rounded-pill" data-bs-toggle="modal"
+                                data-bs-target="#uploadProof{{ r.id }}">
+                                <i data-lucide="upload" style="width: 14px;"></i>
+                            </button>
+
+                            <!-- Bouton Imprimer -->
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="window.print()">
+                                <i data-lucide="printer" style="width: 14px;"></i>
+                            </button>
+
+                            <!-- Bouton Modifier -->
+                            <button class="btn btn-sm btn-outline-warning rounded-pill" data-bs-toggle="modal"
+                                data-bs-target="#editPayroll{{ r.id }}">
+                                <i data-lucide="edit-3" style="width: 14px;"></i>
+                            </button>
+
+                            <!-- Bouton Supprimer -->
+                            <form action="{{ url_for('hr.delete_payroll', record_id=r.id) }}" method="POST"
+                                onsubmit="return confirm('Supprimer cet enregistrement de paie ?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                                </button>
+                            </form>
+                        </div>
+
+    </div>
+
+    <!-- Modal Upload Preuve -->
+    <div class="modal fade" id="uploadProof{{ r.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('hr.upload_proof', record_id=r.id) }}" method="POST"
+                    enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ajouter une preuve de paiement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                        <p class="small text-muted">Sélectionnez le reçu ou la capture d'écran du paiement.</p>
+                        <input type="file" name="proof" class="form-control" accept="image/*,application/pdf" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Uploader</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Modifier -->
+    <div class="modal fade" id="editPayroll{{ r.id }}" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <form action="{{ url_for('hr.update_payroll', record_id=r.id) }}" method="POST">
+                <div class="modal-content text-start">
+                    <div class="modal-header">
+                        <h6 class="modal-title">Rectifier Paie : {{ r.employee.first_name }}</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Heures Travaillées</label>
+                            <input type="number" step="0.1" name="hours" class="form-control"
+                                value="{{ r.worked_hours }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Montant Versé (GNF)</label>
+                            <input type="number" name="amount" class="form-control" value="{{ r.total_paid }}" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary w-100">Enregistrer</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="7" class="text-center text-muted py-5">Aucun historique de paiement disponible.</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+</div>
+</div>
+{% endblock %}

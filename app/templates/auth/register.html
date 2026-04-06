@@ -1,0 +1,81 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Inscription - PharmaCloud{% endblock %}
+
+{% block content %}
+<div class="auth-card shadow-lg p-5 bg-white rounded-4 border-0">
+    <div class="text-center mb-4">
+        <i data-lucide="user-plus" class="text-primary mb-2" style="width: 48px; height: 48px;"></i>
+        <h3 class="fw-bold text-dark">Demande d'Entrée</h3>
+        <p class="text-muted small">Créez votre profil pour rejoindre l'équipe</p>
+    </div>
+
+    <form action="{{ url_for('auth.register') }}" method="POST">
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <label class="form-label text-muted small fw-bold">PRÉNOM</label>
+                <input type="text" name="first_name" class="form-control bg-light border-0 py-2" placeholder="Jean"
+                    required>
+            </div>
+            <div class="col-6">
+                <label class="form-label text-muted small fw-bold">NOM</label>
+                <input type="text" name="last_name" class="form-control bg-light border-0 py-2" placeholder="Dupont"
+                    required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">EMAIL PROFESSIONNEL</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="mail" size="18"></i></span>
+                <input type="email" name="email" class="form-control bg-light border-0 py-2"
+                    placeholder="pharmacien@exemple.com" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">MOT DE PASSE</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="lock" size="18"></i></span>
+                <input type="password" name="password" class="form-control bg-light border-0 py-2"
+                    placeholder="Minimum 8 caractères" required>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">CONFIRMATION</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="check-circle" size="18"></i></span>
+                <input type="password" name="confirm_password" class="form-control bg-light border-0 py-2"
+                    placeholder="••••••••" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm rounded-3">
+            SOUMETTRE MA DEMANDE
+        </button>
+    </form>
+
+    <div class="text-center mt-4">
+        <p class="text-muted small">Déjà un compte ? <a href="{{ url_for('auth.login') }}"
+                class="text-primary fw-bold text-decoration-none">Se connecter</a></p>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        max-width: 500px;
+        width: 100%;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

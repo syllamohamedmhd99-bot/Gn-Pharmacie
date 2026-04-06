@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Historique des Pointages - PharmaCloud{% endblock %}
+{% block header %}Historique des Pointages{% endblock %}
+
+{% block content %}
+<div class="card p-4 shadow-sm border-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold mb-0">Tous les Enregistrements (Pointeuse)</h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Employé</th>
+                    <th>Date & Heure</th>
+                    <th>Action</th>
+                    <th>Appareil / IP Loc.</th>
+                    <th class="text-end">Options</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for clock in clocks %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ clock.user.first_name }} {{ clock.user.last_name }}</div>
+                        <div class="text-muted small">{{ clock.user.role }}</div>
+                    </td>
+                    <td>{{ clock.timestamp.strftime('%d/%m/%Y à %H:%M:%S') }}</td>
+                    <td>
+                        {% if clock.action_type == 'IN' %}
+                        <span class="badge bg-success px-3 py-2"><i data-lucide="log-in"
+                                style="width: 14px; height: 14px; margin-right: 4px;"></i> ARRIVÉE</span>
+                        {% else %}
+                        <span class="badge bg-danger px-3 py-2"><i data-lucide="log-out"
+                                style="width: 14px; height: 14px; margin-right: 4px;"></i> DÉPART</span>
+                        {% endif %}
+                    </td>
+                    <td><code class="bg-light p-1 rounded">{{ clock.ip_address }}</code></td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                                data-bs-target="#editClockModal-{{ clock.id }}">
+                                <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                            </button>
+                            <form action="/hr/timeclock/delete/{{ clock.id }}" method="POST" class="d-inline"
+                                onsubmit="return confirm('Supprimer ce pointage d\'historique de manière définitive ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Modal Modifier Pointage -->
+                <div class="modal fade" id="editClockModal-{{ clock.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <form action="/hr/timeclock/edit/{{ clock.id }}" method="POST">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Ajuster Pointage - {{ clock.user.first_name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Type de Pointage</label>
+                                        <select name="action_type" class="form-select">
+                                            <option value="IN" {% if clock.action_type=='IN' %}selected{% endif %}>
+                                                ARRIVÉE (IN)</option>
+                                            <option value="OUT" {% if clock.action_type=='OUT' %}selected{% endif %}>
+                                                DÉPART (OUT)</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Date & Heure exacte</label>
+                                        <input type="datetime-local" class="form-control" name="timestamp"
+                                            value="{{ clock.timestamp.strftime('%Y-%m-%dT%H:%M') }}" required>
+                                    </div>
+                                    <p class="small text-muted mb-0">Modifier ces informations impactera automatiquement
+                                        le décompte d'heures mensuelles pour la préparation de la paie.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light border"
+                                        data-bs-dismiss="modal">Fermer</button>
+                                    <button type="submit" class="btn btn-primary">Enregistrer Modifs</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">Aucun pointage enregistré.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

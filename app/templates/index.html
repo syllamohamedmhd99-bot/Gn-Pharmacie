@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PharmaCloud ERP{% endblock %}
+{% block header %}Tableau de Bord Global{% endblock %}
+
+{% block content %}
+<!-- Statistiques Rapides -->
+<div class="row g-4 mb-5">
+    <!-- Card Inventaire -->
+    <div class="col-md-4">
+        <div class="card p-4 border-0 shadow-sm h-100"
+            style="background: linear-gradient(135deg, #eaf1ff 0%, #ffffff 100%);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+                    <i data-lucide="package" class="text-primary" style="width: 24px; height: 24px;"></i>
+                </div>
+                <span class="badge bg-danger rounded-pill px-3">{{ expired_count }} Périmés</span>
+            </div>
+            <div class="h2 fw-bold mb-1">{{ total_medicines }}</div>
+            <div class="text-muted small fw-medium">Produits en Catalogue</div>
+        </div>
+    </div>
+
+    <!-- Card Ventes -->
+    <div class="col-md-4">
+        <div class="card p-4 border-0 shadow-sm h-100"
+            style="background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="bg-success bg-opacity-10 p-2 rounded-3">
+                    <i data-lucide="trending-up" class="text-success" style="width: 24px; height: 24px;"></i>
+                </div>
+                <span class="badge bg-success-subtle text-success rounded-pill px-3">En hausse</span>
+            </div>
+            <div class="h2 fw-bold mb-1">{{ "{:,.0f}".format(total_revenue) }} <small class="fs-6">GNF</small></div>
+            <div class="text-muted small fw-medium">Chiffre d'Affaires Total</div>
+        </div>
+    </div>
+
+    <!-- Card RH -->
+    <div class="col-md-4">
+        <div class="card p-4 border-0 shadow-sm h-100"
+            style="background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="bg-danger bg-opacity-10 p-2 rounded-3">
+                    <i data-lucide="users" class="text-danger" style="width: 24px; height: 24px;"></i>
+                </div>
+                <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Equipe</span>
+            </div>
+            <div class="h2 fw-bold mb-1">{{ total_users }}</div>
+            <div class="text-muted small fw-medium">Collaborateurs</div>
+        </div>
+    </div>
+</div>
+
+<!-- Section Graphique et Alertes -->
+<div class="row g-4 mb-5">
+    <!-- Graphique des Ventes (Analyses de performance) -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm p-4 h-100 rounded-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0 text-dark">Performance des Activités</h5>
+                <div class="bg-light p-1 rounded-3">
+                    <button class="btn btn-sm btn-white border-0 shadow-none px-3" disabled>7 Derniers Jours</button>
+                </div>
+            </div>
+            <div style="height: 300px; display: flex; align-items: flex-end; gap: 12px; padding: 20px 0;">
+                <!-- Mini bar chart simulation -->
+                <div class="flex-grow-1 bg-primary bg-opacity-25 rounded-top transition-bar" style="height: 40%;"
+                    title="J-6"></div>
+                <div class="flex-grow-1 bg-primary bg-opacity-50 rounded-top transition-bar" style="height: 65%;"
+                    title="J-5"></div>
+                <div class="flex-grow-1 bg-primary bg-opacity-25 rounded-top transition-bar" style="height: 50%;"
+                    title="J-4"></div>
+                <div class="flex-grow-1 bg-primary bg-opacity-75 rounded-top transition-bar" style="height: 85%;"
+                    title="J-3"></div>
+                <div class="flex-grow-1 bg-primary bg-opacity-50 rounded-top transition-bar" style="height: 60%;"
+                    title="J-2"></div>
+                <div class="flex-grow-1 bg-primary bg-opacity-25 rounded-top transition-bar" style="height: 45%;"
+                    title="Hier"></div>
+                <div class="flex-grow-1 bg-primary rounded-top transition-bar" style="height: 95%;" title="Aujourd'hui">
+                </div>
+            </div>
+            <div class="d-flex justify-content-between text-muted small mt-3 px-1">
+                <span>Lun</span>
+                <span>Mar</span>
+                <span>Mer</span>
+                <span>Jeu</span>
+                <span>Ven</span>
+                <span>Sam</span>
+                <span>Dim</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertes et Actions -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 p-4 pb-0">
+                <h5 class="fw-bold text-dark m-0">Alertes Critiques</h5>
+            </div>
+            <div class="card-body p-4">
+                {% if expired_count > 0 or low_stock %}
+                <div class="d-grid gap-3">
+                    {% for m in low_stock[:2] %}
+                    <div
+                        class="d-flex align-items-center gap-3 p-3 bg-warning bg-opacity-10 rounded-4 border border-warning border-opacity-10">
+                        <div class="text-warning"><i data-lucide="package-x" size="20"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small text-dark">{{ m.name }}</div>
+                            <div class="text-muted" style="font-size: 11px;">Stock : {{ m.total_stock }} (Seuil: {{
+                                m.min_stock_level }})</div>
+                        </div>
+                        <a href="/inventory/dashboard" class="btn btn-sm btn-warning text-white rounded-pill px-2 py-0"
+                            style="font-size: 10px;">Stock</a>
+                    </div>
+                    {% endfor %}
+
+                    {% if expired_count > 0 %}
+                    <div
+                        class="d-flex align-items-center gap-3 p-3 bg-danger bg-opacity-10 rounded-4 border border-danger border-opacity-10">
+                        <div class="text-danger"><i data-lucide="alert-circle" size="20"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small text-dark">{{ expired_count }} Périmés</div>
+                            <div class="text-muted" style="font-size: 11px;">Retrait requis</div>
+                        </div>
+                        <a href="/inventory/dashboard" class="btn btn-sm btn-danger rounded-pill px-2 py-0"
+                            style="font-size: 10px;">Voir</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex p-3 mb-3">
+                        <i data-lucide="check-circle" size="32"></i>
+                    </div>
+                    <p class="text-muted small">Aucune alerte critique.<br>Le stock est sain.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Globale (Design Moderne) -->
+<h5 class="fw-bold text-dark mb-4 ms-1">Navigation Rapide</h5>
+<div class="row g-4">
+    {% if current_user.can_view_inventory or current_user.role == 'Admin' %}
+    <div class="col-md-4">
+        <a href="/inventory/dashboard"
+            class="card p-4 text-decoration-none border-0 shadow-sm text-center dashboard-nav-card bg-white rounded-4 transition-all">
+            <div class="nav-icon-container mb-3 text-primary mx-auto">
+                <i data-lucide="package-search"></i>
+            </div>
+            <span class="fw-bold text-dark">Inventaire</span>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if current_user.can_view_pos or current_user.role == 'Admin' %}
+    <div class="col-md-4">
+        <a href="/pos/terminal"
+            class="card p-4 text-decoration-none border-0 shadow-sm text-center dashboard-nav-card bg-white rounded-4 transition-all">
+            <div class="nav-icon-container mb-3 text-success mx-auto">
+                <i data-lucide="monitor"></i>
+            </div>
+            <span class="fw-bold text-dark">Ventes POS</span>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if current_user.can_view_hr or current_user.role == 'Admin' %}
+    <div class="col-md-4">
+        <a href="/hr/dashboard"
+            class="card p-4 text-decoration-none border-0 shadow-sm text-center dashboard-nav-card bg-white rounded-4 transition-all">
+            <div class="nav-icon-container mb-3 text-warning mx-auto">
+                <i data-lucide="calendar-check"></i>
+            </div>
+            <span class="fw-bold text-dark">Planning & RH</span>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .dashboard-nav-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.1) !important;
+        background-color: #f8fafc !important;
+    }
+
+    .nav-icon-container {
+        width: 50px;
+        height: 50px;
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+
+    .dashboard-nav-card:hover .nav-icon-container {
+        background: rgba(0, 0, 0, 0.06);
+        transform: scale(1.1);
+    }
+
+    .transition-all {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .transition-bar {
+        transition: height 0.6s ease-out;
+    }
+
+    .rounded-4 {
+        border-radius: 1.25rem;
+    }
+
+    .bg-indigo {
+        background-color: #6366f1;
+    }
+</style>
+
+{% if not total_medicines %}
+<div class="alert alert-info mt-5 p-4 border-0 shadow-sm rounded-4 bg-white">
+    <div class="d-flex align-items-center gap-3">
+        <div class="bg-info bg-opacity-10 p-3 rounded-circle">
+            <i data-lucide="info" class="text-info" size="32"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-1">Démarrage rapide</h5>
+            <p class="mb-0 text-muted">Utilisez le bouton ci-dessous pour générer des données de démonstration.</p>
+        </div>
+        <a href="/seed" class="btn btn-info text-white fw-bold rounded-pill px-4 ms-auto">Générer Démo Data</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
