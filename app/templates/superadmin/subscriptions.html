@@ -35,7 +35,7 @@
                                     <div class="text-muted small">{{ pharma.address or 'Adresse non fournie' }}</div>
                                 </td>
                                 <td><code class="text-primary">{{ pharma.license_number }}</code></td>
-                                <td>{{ pharma.users[0].hire_date.strftime('%d/%m/%Y') if pharma.users else 'Récent' }}</td>
+                                <td>{{ pharma.users[0].hire_date.strftime('%d/%m/%Y') if (pharma.users and pharma.users|length > 0) else 'Récemment' }}</td>
                                 <td class="text-end pe-4">
                                     <form action="{{ url_for('approve_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
                                         <button type="submit" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold">

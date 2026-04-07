@@ -291,7 +291,7 @@ def create_app(config_name='default'):
     @app.route('/superadmin/subscriptions')
     @login_required
     def super_admin_subscriptions():
-        if current_user.email != 'admin@pharma.com':
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
             return redirect(url_for('index'))
             
         pharmacies = Pharmacy.query.order_by(Pharmacy.id.desc()).all()
@@ -300,7 +300,7 @@ def create_app(config_name='default'):
     @app.route('/superadmin/approve_pharmacy/<int:id>', methods=['POST'])
     @login_required
     def approve_pharmacy(id):
-        if current_user.email != 'admin@pharma.com':
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
             return "Unauthorized", 401
             
         pharma = Pharmacy.query.get_or_404(id)

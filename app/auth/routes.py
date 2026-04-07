@@ -111,9 +111,10 @@ def register_admin():
                        f"Cordialement,\nSystème PharmaCloud"
             mail.send(msg)
         except Exception as e:
-            print(f"Erreur envoi email alerte : {str(e)}")
-            # On ne bloque pas l'inscription si l'email échoue
-            
+            print(f"--- ERREUR CRITIQUE SMTP ---")
+            print(f"Détail : {str(e)}")
+            print(f"--- FIN ERREUR ---")
+            # Ne bloque pas l'inscription
         session.pop('reg_pharma_name', None)
         session.pop('reg_pharma_address', None)
         session.pop('reg_pharma_license', None)
