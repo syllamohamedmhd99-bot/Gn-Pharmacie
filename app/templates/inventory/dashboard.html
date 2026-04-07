@@ -180,10 +180,17 @@
                         <label class="form-label fw-bold">Nom du médicament</label>
                         <input type="text" name="name" class="form-control" required placeholder="ex: Doliprane 1000mg">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Prix de vente unitaire (GNF)</label>
-                        <input type="number" step="100" name="price" class="form-control" required
-                            placeholder="ex: 15000">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 text-start">
+                            <label class="form-label fw-bold">Prix d'Achat (GNF)</label>
+                            <input type="number" step="1" name="purchase_price" class="form-control" required
+                                placeholder="ex: 8000">
+                        </div>
+                        <div class="col-md-6 text-start">
+                            <label class="form-label fw-bold">Prix de Vente (GNF)</label>
+                            <input type="number" step="1" name="price" class="form-control" required
+                                placeholder="ex: 15000">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Seuil d'alerte Stock Faible</label>

@@ -18,14 +18,16 @@ def terminal():
 @login_required
 @permission_required('can_view_pos')
 def history():
-    sales = Sale.query.order_by(Sale.timestamp.desc()).all()
+    # FILTRE SAAS: Historique de MA pharmacie
+    sales = Sale.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(Sale.timestamp.desc()).all()
     return render_template('pos/history.html', sales=sales)
 
 @bp_pos.route('/sale/delete/<int:sale_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_sale(sale_id):
-    sale = Sale.query.get_or_404(sale_id)
+    # Sécurité: Vérifier l'appartenance
+    sale = Sale.query.filter_by(id=sale_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     # Restore quantities to batches
     for item in sale.items:
         if item.batch:
@@ -39,7 +41,7 @@ def delete_sale(sale_id):
 @login_required
 @admin_required
 def edit_sale(sale_id):
-    sale = Sale.query.get_or_404(sale_id)
+    sale = Sale.query.filter_by(id=sale_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     payment_method = request.form.get('payment_method')
     if payment_method:
         sale.payment_method = payment_method
@@ -49,12 +51,14 @@ def edit_sale(sale_id):
 @bp_pos.route('/invoice/<int:sale_id>')
 @login_required
 def invoice(sale_id):
-    sale = Sale.query.get_or_404(sale_id)
+    sale = Sale.query.filter_by(id=sale_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     return render_template('pos/invoice.html', sale=sale)
 
 @bp_pos.route('/api/medicines', methods=['GET'])
+@login_required
 def get_medicines():
-    medicines = Medicine.query.all()
+    # FILTRE SAAS: Catalogue de MA pharmacie
+    medicines = Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
     result = []
     for m in medicines:
         # Simplification: we just return catalog info.
@@ -71,39 +75,32 @@ def get_medicines():
 @bp_pos.route('/checkout', methods=['POST'])
 @login_required
 def checkout():
-    """
-    Endpoint de vente au comptoir.
-    Attend un payload: { user_id, payment_method, items: [{medicine_id, quantity}] }
-    """
     data = request.json
     if not data or 'items' not in data:
         return jsonify({"error": "Données invalides"}), 400
 
     try:
-        # 1. Création de la vente (état brouillon)
+        # 1. Création de la vente SaaS
         sale = Sale(
-            user_id=data.get('user_id', 1), # En prod, viendrait de current_user
+            user_id=current_user.id, 
             total_amount=0.0,
-            payment_method=data.get('payment_method', 'Cash')
+            payment_method=data.get('payment_method', 'Cash'),
+            pharmacy_id=current_user.pharmacy_id # SAE
         )
         db.session.add(sale)
-        db.session.flush() # Assigne un ID à `sale` sans commiter
+        db.session.flush() 
 
         total_amount = 0.0
 
-        # 2. Itération sur les produits scannés
+        # 2. Itération sur les produits
         for item in data['items']:
             med_id = item['medicine_id']
             qty = item['quantity']
             
-            # Recuperer le prix unitaire du medicament (catalogue)
-            medicine = Medicine.query.get(med_id)
-            if not medicine:
-                db.session.rollback()
-                return jsonify({"error": f"Médicament ID {med_id} introuvable"}), 404
+            # Vérifier l'appartenance du médicament
+            medicine = Medicine.query.filter_by(id=med_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
 
-            # 3. EXÉCUTION DU MOTEUR FEFO (Le point le plus complexe)
-            # Cette fonction va déduire les lots et créer les "SaleItems"
+            # 3. EXÉCUTION DU MOTEUR FEFO
             process_fefo_deduction(
                 sale_id=sale.id, 
                 medicine_id=medicine.id, 
@@ -113,14 +110,14 @@ def checkout():
             
             total_amount += (qty * medicine.default_price)
 
-        # 4. ALERTE RÉAPPROVISIONNEMENT (Stock de Sécurité)
+        # 4. ALERTE RÉAPPROVISIONNEMENT SaaS
         total_stock = sum(b.quantity for b in medicine.batches if b.quantity > 0 and b.expiry_date >= date.today())
         
         if total_stock < medicine.min_stock_level:
-            # Vérifier s'il n'y a pas déjà une commande auto-générée en attente
             from app.models import PurchaseOrder
             existing_order = PurchaseOrder.query.filter_by(
                 medicine_id=medicine.id, 
+                pharmacy_id=current_user.pharmacy_id,
                 status="Auto-Généré"
             ).first()
             
@@ -128,12 +125,12 @@ def checkout():
                 po = PurchaseOrder(
                     supplier_id=medicine.supplier_id,
                     medicine_id=medicine.id,
-                    requested_quantity=100, # Quantité fixe pour l'exemple
+                    pharmacy_id=current_user.pharmacy_id,
+                    requested_quantity=100,
                     status="Auto-Généré"
                 )
                 db.session.add(po)
 
-        # 5. Finalisation
         sale.total_amount = total_amount
         db.session.commit()
         

@@ -7,10 +7,28 @@ from werkzeug.security import generate_password_hash, check_password_hash
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# PILIER 0: Multi-Tenancy (SaaS)
+class Pharmacy(db.Model):
+    __tablename__ = 'pharmacies'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    license_number = db.Column(db.String(100), unique=True, nullable=True)
+    address = db.Column(db.String(255), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+
+    # Relationships
+    users = db.relationship('User', backref='pharmacy', lazy=True)
+    medicines = db.relationship('Medicine', backref='pharmacy', lazy=True)
+    sales = db.relationship('Sale', backref='pharmacy', lazy=True)
+    suppliers = db.relationship('Supplier', backref='pharmacy', lazy=True)
+
 # PILIER 1: Utilisateurs & RH
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(50), nullable=False) # Admin, Pharmacien, Caissier
@@ -44,8 +62,10 @@ class User(UserMixin, db.Model):
 class Medicine(db.Model):
     __tablename__ = 'medicines'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     name = db.Column(db.String(150), nullable=False)
-    barcode = db.Column(db.String(100), unique=True, nullable=True)
+    barcode = db.Column(db.String(100), nullable=True) # Not unique globally in SaaS
+    purchase_price = db.Column(db.Float, default=0.0)
     default_price = db.Column(db.Float, nullable=False)
     
     # Nouveaux champs pour logistique
@@ -62,6 +82,7 @@ class Medicine(db.Model):
 class Batch(db.Model):
     __tablename__ = 'batches'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     medicine_id = db.Column(db.Integer, db.ForeignKey('medicines.id'), nullable=False)
     batch_number = db.Column(db.String(50), nullable=False)
     expiry_date = db.Column(db.Date, nullable=False) # CRITICAL FOR FEFO
@@ -70,6 +91,7 @@ class Batch(db.Model):
 class Supplier(db.Model):
     __tablename__ = 'suppliers'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), nullable=False)
     phone = db.Column(db.String(50), nullable=True)
@@ -78,12 +100,13 @@ class Supplier(db.Model):
     description = db.Column(db.Text, nullable=True)
     
     # Relation pour voir tous les produits fournis par ce fournisseur
-    products = db.relationship('Medicine', backref='supplier', lazy=True)
-    orders = db.relationship('PurchaseOrder', backref='supplier', lazy=True)
+    products = db.relationship('Medicine', backref='provided_by', lazy=True)
+    orders = db.relationship('PurchaseOrder', backref='to_supplier', lazy=True)
 
 class PurchaseOrder(db.Model):
     __tablename__ = 'purchase_orders'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=True)
     medicine_id = db.Column(db.Integer, db.ForeignKey('medicines.id'), nullable=True)
     requested_quantity = db.Column(db.Integer, default=100) # Qté recommandée
@@ -93,6 +116,7 @@ class PurchaseOrder(db.Model):
 class Sale(db.Model):
     __tablename__ = 'sales'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     total_amount = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(50), nullable=False) # Cash, OrangeMoney, MTN
@@ -103,6 +127,7 @@ class Sale(db.Model):
 class SaleItem(db.Model):
     __tablename__ = 'sale_items'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     sale_id = db.Column(db.Integer, db.ForeignKey('sales.id'), nullable=False)
     batch_id = db.Column(db.Integer, db.ForeignKey('batches.id'), nullable=False) # FEFO point
     quantity = db.Column(db.Integer, nullable=False)
@@ -114,6 +139,7 @@ class SaleItem(db.Model):
 class Shift(db.Model):
     __tablename__ = 'shifts'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
@@ -122,6 +148,7 @@ class Shift(db.Model):
 class TimeClock(db.Model):
     __tablename__ = 'time_clocks'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now())
     action_type = db.Column(db.String(10), nullable=False) # "IN" ou "OUT"
@@ -130,6 +157,7 @@ class TimeClock(db.Model):
 class PayrollRecord(db.Model):
     __tablename__ = 'payroll_records'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     month = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
@@ -146,6 +174,7 @@ class PayrollRecord(db.Model):
 class SalaryAdvance(db.Model):
     __tablename__ = 'salary_advances'
     id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)

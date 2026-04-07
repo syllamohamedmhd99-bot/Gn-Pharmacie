@@ -11,8 +11,9 @@ bp_inventory = Blueprint('inventory', __name__)
 @login_required
 @permission_required('can_view_inventory')
 def dashboard():
-    medicines = Medicine.query.all()
-    batches = Batch.query.order_by(Batch.expiry_date.asc()).all()
+    # FILTRE SAAS: Seulement les données de MA pharmacie
+    medicines = Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
+    batches = Batch.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(Batch.expiry_date.asc()).all()
     
     total_stock_value = sum(b.quantity * b.medicine.default_price for b in batches)
     
@@ -20,7 +21,7 @@ def dashboard():
     today_date = date.today()
     near_date = today_date + timedelta(days=30)
     
-    suppliers_list = Supplier.query.all()
+    suppliers_list = Supplier.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
     
     return render_template('inventory/dashboard.html', 
                            medicines=medicines, 
@@ -32,16 +33,24 @@ def dashboard():
 
 
 @bp_inventory.route('/medicine/add', methods=['POST'])
+@login_required
 def add_medicine():
     name = request.form.get('name')
     price = request.form.get('price')
+    purchase_price = request.form.get('purchase_price', 0.0)
     min_stock = request.form.get('min_stock', 10)
     barcode = request.form.get('barcode', None)
     supplier_id = request.form.get('supplier_id')
     
     if name and price:
-        med = Medicine(name=name, default_price=float(price), 
-                       min_stock_level=int(min_stock), barcode=barcode)
+        med = Medicine(
+            name=name, 
+            default_price=float(price), 
+            purchase_price=float(purchase_price),
+            min_stock_level=int(min_stock), 
+            barcode=barcode,
+            pharmacy_id=current_user.pharmacy_id # SaaS
+        )
         if supplier_id:
             med.supplier_id = int(supplier_id)
         db.session.add(med)
@@ -50,16 +59,19 @@ def add_medicine():
     return redirect(url_for('inventory.dashboard'))
 
 @bp_inventory.route('/medicine/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_medicine(id):
-    med = Medicine.query.get_or_404(id)
+    # Sécurité: Vérifier l'appartenance à la pharmacie
+    med = Medicine.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     # Delete associated batches first
-    Batch.query.filter_by(medicine_id=id).delete()
+    Batch.query.filter_by(medicine_id=id, pharmacy_id=current_user.pharmacy_id).delete()
     db.session.delete(med)
     db.session.commit()
     flash("Médicament supprimé", "success")
     return redirect(url_for('inventory.dashboard'))
 
 @bp_inventory.route('/batch/add', methods=['POST'])
+@login_required
 def add_batch():
     medicine_id = request.form.get('medicine_id')
     batch_number = request.form.get('batch_number')
@@ -67,19 +79,26 @@ def add_batch():
     expiry_date_str = request.form.get('expiry_date')
     
     if medicine_id and batch_number and quantity and expiry_date_str:
+        # Sécurité: Vérifier que le médicament appartient bien à la pharmacie
+        Medicine.query.filter_by(id=medicine_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+        
         expiry_date = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
-        batch = Batch(medicine_id=int(medicine_id), 
-                      batch_number=batch_number, 
-                      quantity=int(quantity), 
-                      expiry_date=expiry_date)
+        batch = Batch(
+            medicine_id=int(medicine_id), 
+            batch_number=batch_number, 
+            quantity=int(quantity), 
+            expiry_date=expiry_date,
+            pharmacy_id=current_user.pharmacy_id # SaaS
+        )
         db.session.add(batch)
         db.session.commit()
         flash("Lot ajouté avec succès", "success")
     return redirect(url_for('inventory.dashboard'))
 
 @bp_inventory.route('/batch/delete/<int:id>', methods=['POST'])
+@login_required
 def delete_batch(id):
-    batch = Batch.query.get_or_404(id)
+    batch = Batch.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     db.session.delete(batch)
     db.session.commit()
     flash("Lot supprimé", "success")
@@ -88,9 +107,9 @@ def delete_batch(id):
 @bp_inventory.route('/suppliers')
 @login_required
 def suppliers():
-    suppliers = Supplier.query.all()
-    orders = PurchaseOrder.query.order_by(PurchaseOrder.id.desc()).all()
-    medicines = Medicine.query.all()
+    suppliers = Supplier.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
+    orders = PurchaseOrder.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(PurchaseOrder.id.desc()).all()
+    medicines = Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
     return render_template('inventory/suppliers.html', suppliers=suppliers, orders=orders, medicines=medicines)
 
 @bp_inventory.route('/supplier/add', methods=['POST'])
@@ -104,9 +123,15 @@ def add_supplier():
     description = request.form.get('description')
     
     if name and email:
-        sup = Supplier(name=name, email=email, phone=phone, 
-                       address=address, contact_person=contact_person, 
-                       description=description)
+        sup = Supplier(
+            name=name, 
+            email=email, 
+            phone=phone, 
+            address=address, 
+            contact_person=contact_person, 
+            description=description,
+            pharmacy_id=current_user.pharmacy_id # SaaS
+        )
         db.session.add(sup)
         db.session.commit()
         flash(f"Fournisseur {name} ajouté avec succès", "success")
@@ -115,9 +140,9 @@ def add_supplier():
 @bp_inventory.route('/supplier/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_supplier(id):
-    sup = Supplier.query.get_or_404(id)
-    # Détacher les médicaments
-    Medicine.query.filter_by(supplier_id=id).update({Medicine.supplier_id: None})
+    sup = Supplier.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+    # Détacher les médicaments (seulement ceux de MA pharmacie)
+    Medicine.query.filter_by(supplier_id=id, pharmacy_id=current_user.pharmacy_id).update({Medicine.supplier_id: None})
     db.session.delete(sup)
     db.session.commit()
     flash(f"Fournisseur {sup.name} supprimé", "warning")

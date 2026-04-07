@@ -13,13 +13,10 @@ bp_hr = Blueprint('hr', __name__)
 @login_required
 @permission_required('can_view_hr')
 def dashboard():
-    users = User.query.all()
-    
-    # Historique de pointage récent GLOBAL
-    recent_clocks = TimeClock.query.order_by(TimeClock.timestamp.desc()).limit(10).all()
-    
-    # Plannings (Shifts) à venir GLOBAL (on affiche tout pour l'instant)
-    shifts = Shift.query.order_by(Shift.date.asc()).all()
+    # FILTRE SAAS: Seulement MA pharmacie
+    users = User.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
+    recent_clocks = TimeClock.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(TimeClock.timestamp.desc()).limit(10).all()
+    shifts = Shift.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(Shift.date.asc()).all()
     
     return render_template('hr/dashboard.html', 
                            users=users,
@@ -30,14 +27,14 @@ def dashboard():
 @login_required
 @admin_required
 def directory():
-    users = User.query.all()
+    # FILTRE SAAS: Seulement mon annuaire
+    users = User.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
     from datetime import datetime
     current_year = datetime.now().year
     current_month = datetime.now().month
     
     from app.hr_management.payroll_service import calculate_monthly_hours
     
-    # Enrichir les data d'employé avec le calcul des heures pour ne pas alourdir la vue
     for u in users:
         u.monthly_hours = calculate_monthly_hours(u.id, current_year, current_month)
         
@@ -47,14 +44,14 @@ def directory():
 @login_required
 @admin_required
 def history():
-    clocks = TimeClock.query.order_by(TimeClock.timestamp.desc()).all()
+    clocks = TimeClock.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(TimeClock.timestamp.desc()).all()
     return render_template('hr/history.html', clocks=clocks)
 
 @bp_hr.route('/timeclock/delete/<int:clock_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_clock(clock_id):
-    clock = TimeClock.query.get_or_404(clock_id)
+    clock = TimeClock.query.filter_by(id=clock_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     db.session.delete(clock)
     db.session.commit()
     flash("Pointage supprimé avec succès.", "success")
@@ -105,7 +102,8 @@ def add_employee():
             address=request.form.get('address'),
             contract_type=contract,
             base_salary=salary,
-            is_active=True # Admin addition is active by default
+            is_active=True,
+            pharmacy_id=current_user.pharmacy_id # SAE
         )
         new_user.set_password(password)
         db.session.add(new_user)
@@ -160,7 +158,8 @@ def update_permissions(user_id):
 @login_required
 @admin_required
 def payroll_history():
-    records = PayrollRecord.query.order_by(PayrollRecord.payment_date.desc()).all()
+    # FILTRE SAAS: Historique paie de MA pharmacie
+    records = PayrollRecord.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(PayrollRecord.payment_date.desc()).all()
     return render_template('hr/payroll_history.html', records=records)
 
 @bp_hr.route('/payroll/process/<int:user_id>', methods=['POST'])
@@ -169,7 +168,8 @@ def payroll_history():
 def process_payroll(user_id):
     from datetime import datetime
     now = datetime.now()
-    user = User.query.get_or_404(user_id)
+    # Sécurité SaaS
+    user = User.query.filter_by(id=user_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     
     from app.hr_management.payroll_service import calculate_monthly_hours
     hours = calculate_monthly_hours(user_id, now.year, now.month)
@@ -178,8 +178,8 @@ def process_payroll(user_id):
     # On va assumer ici que base_salary est le taux horaire pour la démo, ou un fixe mensuel.
     # On va stocker le fixe mensuel par défaut.
     
-    # Calculer le montant des avances en cours
-    pending_advances = SalaryAdvance.query.filter_by(user_id=user_id, status='Pending').all()
+    # Calculer le montant des avances en cours (SAE)
+    pending_advances = SalaryAdvance.query.filter_by(user_id=user_id, pharmacy_id=current_user.pharmacy_id, status='Pending').all()
     total_advance_amount = sum(adv.amount for adv in pending_advances)
     
     # Net à payer (Simplifié : Salaire de base - Avances)
@@ -187,6 +187,7 @@ def process_payroll(user_id):
     
     record = PayrollRecord(
         user_id=user_id,
+        pharmacy_id=current_user.pharmacy_id, # SAE
         month=now.month,
         year=now.year,
         worked_hours=hours,
@@ -249,11 +250,12 @@ def timeclock():
     
     user = User.query.get(user_id)
     
-    last_clock = TimeClock.query.filter_by(user_id=user_id).order_by(TimeClock.timestamp.desc()).first()
+    last_clock = TimeClock.query.filter_by(user_id=user_id, pharmacy_id=current_user.pharmacy_id).order_by(TimeClock.timestamp.desc()).first()
     new_action = 'IN' if not last_clock or last_clock.action_type == 'OUT' else 'OUT'
     
     clock_record = TimeClock(
         user_id=int(user_id),
+        pharmacy_id=current_user.pharmacy_id, # SAE
         action_type=new_action,
         ip_address=ip_address
     )
@@ -291,7 +293,12 @@ def add_advance(user_id):
     reason = request.form.get('reason')
     
     if amount > 0:
-        advance = SalaryAdvance(user_id=user_id, amount=amount, reason=reason)
+        advance = SalaryAdvance(
+            user_id=user_id, 
+            amount=amount, 
+            reason=reason,
+            pharmacy_id=current_user.pharmacy_id # SAE
+        )
         db.session.add(advance)
         db.session.commit()
         flash(f"Avance de {amount} GNF accordée.", "success")

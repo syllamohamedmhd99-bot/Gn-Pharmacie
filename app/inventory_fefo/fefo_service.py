@@ -12,20 +12,17 @@ class ExpiredMedicineError(Exception):
 
 def process_fefo_deduction(sale_id, medicine_id, required_quantity, unit_price):
     """
-    Algorithme FEFO (First Expiring, First Out).
-    Déduit dynamiquement la quantité requise à travers plusieurs lots
-    en donnant la priorité aux lots qui expirent le plus tôt, tout en
-    échappant aux lots déjà périmés.
+    Algorithme FEFO (First Expiring, First Out) SAE.
     """
+    from flask_login import current_user
     
-    # 1. Requête avec verrouillage Pessimiste : FOR UPDATE
-    # Cela empêche d'autres caissiers de prélever simultanément sur ces mêmes lots 
-    # avant la fin de la transaction, évitant les stocks négatifs.
+    # 1. Requête avec verrouillage Pessimiste ET Filtre SaaS
     available_batches = Batch.query.with_for_update().filter(
         Batch.medicine_id == medicine_id,
+        Batch.pharmacy_id == current_user.pharmacy_id, # SAE
         Batch.quantity > 0
     ).order_by(
-        Batch.expiry_date.asc() # Plus c'est proche de périmer, plus ça remonte en haut
+        Batch.expiry_date.asc()
     ).all()
 
     remaining_to_deduct = required_quantity
@@ -35,24 +32,20 @@ def process_fefo_deduction(sale_id, medicine_id, required_quantity, unit_price):
         if remaining_to_deduct <= 0:
             break
 
-        # Verification Sécurité : Interdiction absolue de vendre un lot expiré
         if batch.expiry_date < date.today():
-             continue # On ignore ce lot et on passe au suivant
+             continue 
 
         if batch.quantity >= remaining_to_deduct:
-             # Ce lot peut couvrir toute la demande (ou le reste de la demande)
              deduction = remaining_to_deduct
         else:
-             # Le lot n'a pas assez, on le vide complètement et on continue
              deduction = batch.quantity
 
-        # Mise à jour du lot
         batch.quantity -= deduction
         remaining_to_deduct -= deduction
 
-        # Création de la trace dans la Vente (Ligne de ticket de Caisse lié au Lot précis)
         sale_item = SaleItem(
              sale_id=sale_id,
+             pharmacy_id=current_user.pharmacy_id, # SAE
              batch_id=batch.id,
              quantity=deduction,
              unit_price=unit_price

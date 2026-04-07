@@ -2,7 +2,8 @@ from flask import Flask, render_template, redirect, url_for
 from flask_login import login_required
 from config import config
 from app.extensions import db, migrate, login_manager
-from app.models import User, Medicine, Batch, Sale, SaleItem
+from app.models import User, Medicine, Batch, Sale, SaleItem, Pharmacy
+from flask_login import current_user
 from datetime import datetime, timedelta
 
 def create_app(config_name='default'):
@@ -31,15 +32,22 @@ def create_app(config_name='default'):
     @app.route('/')
     @login_required
     def index():
-        total_medicines = Medicine.query.count()
-        total_users = User.query.count()
-        total_revenue = db.session.query(db.func.sum(Sale.total_amount)).scalar() or 0
+        # FILTRE SAAS: Statistiques de MA pharmacie
+        total_medicines = Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).count()
+        total_users = User.query.filter_by(pharmacy_id=current_user.pharmacy_id).count()
+        total_revenue = db.session.query(db.func.sum(Sale.total_amount))\
+            .filter(Sale.pharmacy_id == current_user.pharmacy_id).scalar() or 0
         
-        # Alert Logic
-        from datetime import datetime
+        # Alert Logic SaaS
         today = datetime.utcnow()
-        expired_count = Batch.query.filter(Batch.expiry_date < today, Batch.quantity > 0).count()
-        low_stock = [m for m in Medicine.query.all() if m.total_stock <= m.min_stock_level]
+        expired_count = Batch.query.filter(
+            Batch.expiry_date < today, 
+            Batch.quantity > 0,
+            Batch.pharmacy_id == current_user.pharmacy_id
+        ).count()
+        
+        low_stock = [m for m in Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).all() 
+                    if m.total_stock <= m.min_stock_level]
                 
         return render_template('index.html', 
                                total_medicines=total_medicines,
@@ -48,50 +56,69 @@ def create_app(config_name='default'):
                                expired_count=expired_count,
                                low_stock=low_stock)
 
-    # Temporary Seeding Route for Demo
+    # Route SaaS: Initialisation / Migration
     @app.route('/seed')
     def seed():
         db.create_all()
-        # 1. Create default admin if not exists
-        admin = User.query.filter_by(email='admin@pharma.com').first()
+        
+        # 1. Création de la Pharmacie par défaut si nécessaire
+        default_pharma = Pharmacy.query.filter_by(name='Pharmacie de Démonstration').first()
+        if not default_pharma:
+            default_pharma = Pharmacy(
+                name='Pharmacie de Démonstration',
+                address='Conakry, Guinée',
+                license_number='DEMO-001'
+            )
+            db.session.add(default_pharma)
+            db.session.flush()
+            
+        # 2. Gestion de l'Admin SaaS
+        admin_email = 'admin@pharma.com'
+        admin = User.query.filter_by(email=admin_email).first()
+        
         if not admin:
-            admin = User(email='admin@pharma.com', role='Admin', is_active=True, 
-                         first_name='Admin', last_name='Titulaire',
-                         can_view_pos=True, can_view_inventory=True, 
-                         can_view_hr=True, can_view_admin=True)
+            admin = User(
+                email=admin_email, 
+                role='Admin', 
+                pharmacy_id=default_pharma.id,
+                is_active=True, 
+                first_name='Admin', 
+                last_name='SaaS',
+                can_view_pos=True, 
+                can_view_inventory=True, 
+                can_view_hr=True, 
+                can_view_admin=True
+            )
             admin.set_password('admin123')
             db.session.add(admin)
         else:
-            admin.is_active = True
-            admin.role = 'Admin'
-            admin.can_view_pos = True
-            admin.can_view_inventory = True
-            admin.can_view_hr = True
-            admin.can_view_admin = True
-            admin.set_password('admin123')
-        db.session.commit()
-
-        # 2. Add some medicines
-        if Medicine.query.count() == 0:
-            m1 = Medicine(name='Amoxicilline 1g', default_price=45000.0, min_stock_level=20)
-            m2 = Medicine(name='Doliprane 1000', default_price=12000.0, min_stock_level=15)
-            m3 = Medicine(name='Paracétamol Sirop', default_price=8000.0, min_stock_level=10)
-            m4 = Medicine(name='Betadine Jaune', default_price=35000.0, min_stock_level=50) # ALERT TEST
-            db.session.add_all([m1, m2, m3, m4])
+            # Migration: Rattaché à la pharmacie démo si orphelin
+            if not admin.pharmacy_id:
+                admin.pharmacy_id = default_pharma.id
+        
+        # 3. Migration des Médicaments orphelins
+        orphaned_meds = Medicine.query.filter_by(pharmacy_id=None).all()
+        for m in orphaned_meds:
+            m.pharmacy_id = default_pharma.id
+            
+        try:
             db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return f"Erreur Migration SaaS : {str(e)}"
 
-            # Add lots (batches)
-            from datetime import timedelta
-            b1 = Batch(medicine_id=m1.id, batch_number='LOT-AMX-001', quantity=100, expiry_date=datetime.utcnow() + timedelta(days=365))
-            b2 = Batch(medicine_id=m2.id, batch_number='LOT-DOL-001', quantity=5, expiry_date=datetime.utcnow() + timedelta(days=15)) # EXPIRY ALERT
-            b3 = Batch(medicine_id=m4.id, batch_number='LOT-BET-001', quantity=10, expiry_date=datetime.utcnow() + timedelta(days=200)) # STOCK ALERT
-            db.session.add_all([b1, b2, b3])
-
-            # 4. Add a dummy sale
-            sale = Sale(user_id=1, total_amount=157000.0, payment_method='Cash')
-            db.session.add(sale)
-
-        db.session.commit()
         return redirect(url_for('index'))
+
+    # Route Super-Admin (Gestion Globale du SaaS)
+    @app.route('/superadmin')
+    @login_required
+    def super_admin():
+        # Sécurité : Seul l'admin maître peut voir tout
+        if current_user.email != 'admin@pharma.com':
+            flash("Accès réservé au Super-Administrateur.", "danger")
+            return redirect(url_for('index'))
+            
+        pharmacies = Pharmacy.query.all()
+        return render_template('superadmin/dashboard.html', pharmacies=pharmacies)
 
     return app

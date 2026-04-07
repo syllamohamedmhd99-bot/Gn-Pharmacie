@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Super-Admin - PharmaCloud SaaS{% endblock %}
+
+{% block header %}Gestion Globale SaaS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div class="card-header bg-dark text-white p-4 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Pharmacies Enregistrées sur la Plateforme</h5>
+                <span class="badge bg-primary px-3 rounded-pill">{{ pharmacies|length }} Pharmacies</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small fw-bold">
+                        <tr>
+                            <th class="ps-4">NOM DE L'ÉTABLISSEMENT</th>
+                            <th>ADRESSE</th>
+                            <th>LICENCE</th>
+                            <th>DATE INSCRIPTION</th>
+                            <th class="text-end pe-4">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if pharmacies %}
+                        {% for pharma in pharmacies %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-info-subtle text-info p-2 rounded-3">
+                                        <i data-lucide="building" size="20"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ pharma.name }}</div>
+                                        <div class="text-muted x-small">ID: #{{ pharma.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="text-muted small">{{ pharma.address or 'N/A' }}</span></td>
+                            <td><span class="badge bg-secondary-subtle text-secondary rounded-pill py-1 px-2 fw-normal">{{ pharma.license_number }}</span></td>
+                            <td><span class="text-muted small">{{ pharma.name }}</span></td> <!-- Juste un placeholder ici -->
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Détails</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted small">Aucune pharmacie enregistrée pour le moment.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small { font-size: 0.7rem; }
+    .table thead th { border: none; letter-spacing: 0.05em; }
+    .table tbody tr td { border-color: #f1f5f9; padding: 1.2rem 0.5rem; }
+</style>
+{% endblock %}

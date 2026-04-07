@@ -60,18 +60,42 @@
                 </div>
             </div>
 
-            <div class="border-top pt-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small fw-bold">PRODUITS FOURNIS</span>
+            <div class="border-top pt-3 mt-auto">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted small fw-bold">PRODUITS FOURNIS (STOCK)</span>
                     <span class="badge bg-primary-subtle text-primary rounded-pill">{{ s.products|length }}</span>
                 </div>
-                <div class="d-flex flex-wrap gap-1">
-                    {% for p in s.products[:3] %}
-                        <span class="badge bg-light text-dark border fw-normal">{{ p.name }}</span>
-                    {% endfor %}
-                    {% if s.products|length > 3 %}
-                        <span class="badge bg-light text-muted border fw-normal">+{{ s.products|length - 3 }}</span>
-                    {% endif %}
+                
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless align-middle mb-0" style="font-size: 0.75rem;">
+                        <thead class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">
+                            <tr>
+                                <th>Produit</th>
+                                <th class="text-center">Qté</th>
+                                <th class="text-end">Achat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in s.products[:5] %}
+                            <tr class="border-bottom-0">
+                                <td class="fw-bold text-truncate" style="max-width: 100px;">{{ p.name }}</td>
+                                <td class="text-center">
+                                    <span class="badge {% if p.total_stock <= p.min_stock_level %}bg-danger-subtle text-danger{% else %}bg-light text-dark{% endif %}">
+                                        {{ p.total_stock }}
+                                    </span>
+                                </td>
+                                <td class="text-end fw-semibold text-primary">{{ "{:,.0f}".format(p.purchase_price) }} GNF</td>
+                            </tr>
+                            {% endfor %}
+                            {% if s.products|length > 5 %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted small pt-2">
+                                    + {{ s.products|length - 5 }} autres articles au catalogue
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
-from app.models import User
+from app.models import User, Pharmacy
 from app.extensions import db
 
 bp_auth = Blueprint('auth', __name__)
@@ -22,7 +22,7 @@ def login():
             return redirect(url_for('auth.login'))
             
         if not user.is_active:
-             flash('Votre compte est en attente de validation par l\'administrateur.', 'warning')
+             flash('Votre compte est en attente de validation.', 'warning')
              return redirect(url_for('auth.login'))
              
         login_user(user, remember=remember)
@@ -32,42 +32,63 @@ def login():
 
 @bp_auth.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
+    # Étape 1 : Informations sur la Pharmacie
+    if request.method == 'POST':
+        session['reg_pharma_name'] = request.form.get('pharmacy_name')
+        session['reg_pharma_address'] = request.form.get('pharmacy_address')
+        session['reg_pharma_license'] = request.form.get('pharmacy_license')
+        return redirect(url_for('auth.register_admin'))
+        
+    return render_template('auth/register_pharmacy.html')
+
+@bp_auth.route('/register/admin', methods=['GET', 'POST'])
+def register_admin():
+    # Étape 2 : Informations sur l'Administrateur
+    if 'reg_pharma_name' not in session:
+        return redirect(url_for('auth.register'))
         
     if request.method == 'POST':
         email = request.form.get('email')
+        password = request.form.get('password')
         first_name = request.form.get('first_name')
         last_name = request.form.get('last_name')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
         
-        if password != confirm_password:
-            flash('Les mots de passe ne correspondent pas.', 'danger')
-            return redirect(url_for('auth.register'))
-            
-        user = User.query.filter_by(email=email).first()
-        
-        if user:
+        if User.query.filter_by(email=email).first():
             flash('Cet email est déjà utilisé.', 'danger')
-            return redirect(url_for('auth.register'))
+            return redirect(url_for('auth.register_admin'))
             
+        # 1. Créer la Pharmacie
+        new_pharmacy = Pharmacy(
+            name=session['reg_pharma_name'],
+            address=session['reg_pharma_address'],
+            license_number=session['reg_pharma_license']
+        )
+        db.session.add(new_pharmacy)
+        db.session.flush() 
+        
+        # 2. Créer l'Utilisateur Admin
         new_user = User(
             email=email,
             first_name=first_name,
             last_name=last_name,
-            role='Vendeur', # Default role
-            is_active=False  # Requires admin validation
+            role='Admin',
+            pharmacy_id=new_pharmacy.id,
+            is_active=True, 
+            can_view_pos=True,
+            can_view_inventory=True,
+            can_view_hr=True,
+            can_view_admin=True
         )
         new_user.set_password(password)
-        
         db.session.add(new_user)
         db.session.commit()
         
-        flash('Inscription réussie ! Votre compte est en attente de validation.', 'success')
+        session.pop('reg_pharma_name', None)
+        
+        flash('Compte Pharmacie créé avec succès ! Connectez-vous.', 'success')
         return redirect(url_for('auth.login'))
         
-    return render_template('auth/register.html')
+    return render_template('auth/register_admin.html')
 
 @bp_auth.route('/logout')
 @login_required

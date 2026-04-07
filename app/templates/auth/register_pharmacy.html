@@ -1,0 +1,64 @@
+{% extends "base_auth.html" %}
+
+{% block title %}S'inscrire - PharmaCloud SaaS{% endblock %}
+
+{% block content %}
+<div class="auth-card shadow-lg p-5 bg-white rounded-4 border-0">
+    <div class="text-center mb-4">
+        <div class="badge bg-primary-subtle text-primary mb-3 px-3 py-2 rounded-pill">Étape 1 / 2</div>
+        <i data-lucide="building-2" class="text-primary mb-2" style="width: 48px; height: 48px;"></i>
+        <h3 class="fw-bold text-dark">Votre Pharmacie</h3>
+        <p class="text-muted small">Enregistrez votre établissement sur la plateforme</p>
+    </div>
+
+    <form action="{{ url_for('auth.register') }}" method="POST">
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">NOM DE LA PHARMACIE</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="map-pin" size="18"></i></span>
+                <input type="text" name="pharmacy_name" class="form-control bg-light border-0 py-2"
+                    placeholder="ex: Pharmacie Conakry Centre" required>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">NUMÉRO DE LICENCE / AGRÉMENT</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="file-text" size="18"></i></span>
+                <input type="text" name="pharmacy_license" class="form-control bg-light border-0 py-2"
+                    placeholder="ex: L-2024-XXXX" required>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">ADRESSE DU SIÈGE</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="map" size="18"></i></span>
+                <textarea name="pharmacy_address" class="form-control bg-light border-0 py-2" 
+                    placeholder="Quartier, Commune, Ville..." rows="2" required></textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm rounded-3 d-flex align-items-center justify-content-center">
+            CONTINUER <i data-lucide="chevron-right" class="ms-2" size="20"></i>
+        </button>
+    </form>
+
+    <div class="text-center mt-4">
+        <p class="text-muted small">Déjà inscrit ? <a href="{{ url_for('auth.login') }}"
+                class="text-primary fw-bold text-decoration-none">Se connecter</a></p>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        max-width: 500px;
+        width: 100%;
+        animation: slideUp 0.5s ease-out;
+    }
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}

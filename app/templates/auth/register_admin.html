@@ -1,0 +1,67 @@
+{% extends "base_auth.html" %}
+
+{% block title %}S'inscrire - Compte Admin SaaS{% endblock %}
+
+{% block content %}
+<div class="auth-card shadow-lg p-5 bg-white rounded-4 border-0">
+    <div class="text-center mb-4">
+        <div class="badge bg-success-subtle text-success mb-3 px-3 py-2 rounded-pill">Étape 2 / 2</div>
+        <i data-lucide="user-check" class="text-primary mb-2" style="width: 48px; height: 48px;"></i>
+        <h3 class="fw-bold text-dark">Propriétaire / Gérant</h3>
+        <p class="text-muted small">Créez votre accès personnel pour gérer <strong>{{ session.get('reg_pharma_name') }}</strong></p>
+    </div>
+
+    <form action="{{ url_for('auth.register_admin') }}" method="POST">
+        <div class="row mb-3">
+            <div class="col-6">
+                <label class="form-label text-muted small fw-bold">PRÉNOM</label>
+                <input type="text" name="first_name" class="form-control bg-light border-0 py-2" placeholder="Prénoms" required>
+            </div>
+            <div class="col-6">
+                <label class="form-label text-muted small fw-bold">NOM</label>
+                <input type="text" name="last_name" class="form-control bg-light border-0 py-2" placeholder="Nom" required>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">EMAIL PROFESSIONNEL</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="mail" size="18"></i></span>
+                <input type="email" name="email" class="form-control bg-light border-0 py-2"
+                    placeholder="ex: gerant@pharma.com" required>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">MOT DE PASSE</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i data-lucide="lock" size="18"></i></span>
+                <input type="password" name="password" class="form-control bg-light border-0 py-2"
+                    placeholder="8 caractères minimum" required>
+            </div>
+            <p class="text-muted x-small mt-2">En vous inscrivant, vous devenez l'administrateur principal de cet établissement.</p>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm rounded-3 d-flex align-items-center justify-content-center">
+            CRÉER MON ESPACE SAAS <i data-lucide="sparkles" class="ms-2" size="20"></i>
+        </button>
+    </form>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('auth.register') }}" class="text-muted small text-decoration-none"><i data-lucide="arrow-left" size="14"></i> Retour à l'étape 1</a>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        max-width: 500px;
+        width: 100%;
+        animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .x-small { font-size: 0.75rem; }
+</style>
+{% endblock %}
