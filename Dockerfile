@@ -24,5 +24,5 @@ COPY . /app/
 # Expose port
 EXPOSE 5000
 
-# Run command
-CMD ["python", "run.py"]
+# Start with initialization and gunicorn
+CMD ["sh", "-c", "python init_db.py && gunicorn --bind 0.0.0.0:$PORT run:app"]
