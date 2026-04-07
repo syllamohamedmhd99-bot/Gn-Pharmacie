@@ -42,16 +42,19 @@ def login():
 
     # Étape 1 : Informations sur la Pharmacie
     if request.method == 'POST':
-        name = request.form.get('pharmacy_name')
-        license_no = request.form.get('pharmacy_license')
+        name = request.form.get('pharmacy_name', '').strip()
+        license_no = request.form.get('pharmacy_license', '').strip()
         
-        # SÉCURITÉ SAAS : Vérifier si la licence existe déjà
-        if Pharmacy.query.filter_by(license_number=license_no).first():
-            flash(f"La licence '{license_no}' est déjà enregistrée. Veuillez utiliser une autre licence ou contacter le support.", "warning")
+        # SÉCURITÉ SAAS : Vérification Robuste (Insensible à la casse + Espaces)
+        from sqlalchemy import func
+        existing = Pharmacy.query.filter(func.lower(Pharmacy.license_number) == license_no.lower()).first()
+        
+        if existing:
+            flash(f"Désolé, la licence '{license_no}' est déjà utilisée par la pharmacie '{existing.name}'.", "warning")
             return redirect(url_for('auth.register'))
             
         session['reg_pharma_name'] = name
-        session['reg_pharma_address'] = request.form.get('pharmacy_address')
+        session['reg_pharma_address'] = request.form.get('pharmacy_address', '').strip()
         session['reg_pharma_license'] = license_no
         return redirect(url_for('auth.register_admin'))
         
