@@ -24,6 +24,7 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-light);
             color: #1e293b;
+            overflow-x: hidden;
         }
 
         .sidebar {
@@ -34,14 +35,49 @@
             top: 0;
             background-color: var(--brand-dark);
             color: white;
-            padding: 2rem 1.5rem;
-            z-index: 1000;
+            padding: 1.5rem 1rem;
+            z-index: 1050;
+            transition: transform 0.3s ease-in-out;
         }
 
         .main-content {
             margin-left: var(--sidebar-width);
-            padding: 2rem;
+            padding: 1.5rem;
             min-height: 100vh;
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                z-index: 1040;
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
         }
 
         .nav-link {
@@ -69,7 +105,7 @@
 
         .card {
             border: none;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
@@ -82,23 +118,37 @@
             gap: 10px;
         }
 
-        .badge-fefo {
-            background-color: #fee2e2;
-            color: #ef4444;
-            font-weight: 700;
+        .hamburger-btn {
+            background: white;
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            color: var(--brand-dark);
+        }
+
+        @media (max-width: 991.98px) {
+            .hamburger-btn {
+                display: flex;
+            }
         }
     </style>
 </head>
 
 <body>
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-header p-4 pb-2">
             <div class="d-flex align-items-center gap-3 mb-5">
                 <div class="bg-primary p-2 rounded-3 text-white">
                     <i data-lucide="cross" size="24"></i>
                 </div>
-                <h5 class="fw-bold mb-0 text-primary">PharmaCloud</h5>
+                <h5 class="fw-bold mb-0 text-white">PharmaCloud</h5>
             </div>
         </div>
 
@@ -120,54 +170,59 @@
             {% endif %}
 
             {% if current_user.can_view_hr or current_user.role == 'Admin' %}
-            <a class="nav-link {% if request.endpoint == 'hr.dashboard' %}active{% endif %}" href="/hr/dashboard">
+            <a class="nav-link {% if request.path.startswith('/hr') and 'directory' not in request.path and 'history' not in request.path %}active{% endif %}" href="/hr/dashboard">
                 <i data-lucide="users" size="20"></i> RH & Plannings
             </a>
             {% endif %}
 
             {% if current_user.can_view_admin or current_user.role == 'Admin' %}
             <div class="text-muted small fw-bold px-3 mt-3 mb-1" style="font-size: 0.65rem;">ADMINISTRATION</div>
-            <a class="nav-link {% if request.endpoint == 'hr.directory' %}active{% endif %}" href="/hr/directory">
+            <a class="nav-link {% if 'directory' in request.path %}active{% endif %}" href="/hr/directory">
                 <i data-lucide="contact" size="20"></i> Annuaire & Paie
             </a>
-            <a class="nav-link {% if request.endpoint == 'hr.history' %}active{% endif %}" href="/hr/history">
+            <a class="nav-link {% if 'history' in request.path %}active{% endif %}" href="/hr/history">
                 <i data-lucide="clock" size="20"></i> Historique Pointages
             </a>
             {% endif %}
 
-            <a class="nav-link {% if request.endpoint == 'auth.profile' %}active{% endif %}"
+            <a class="nav-link {% if 'profile' in request.path %}active{% endif %}"
                 href="{{ url_for('auth.profile') }}">
                 <i data-lucide="user-cog" size="20"></i> Mon Profil
             </a>
 
             <hr class="my-4 opacity-10">
             <a class="nav-link text-danger mt-auto mb-4" href="{{ url_for('auth.logout') }}">
-                <i data-lucide="log-out" size="20"></i> Déconnexion
+                <i data-lucide="log-out" size="20"></i> DǸconnexion
             </a>
         </nav>
     </div>
 
     <main class="main-content">
-        <header class="d-flex justify-content-between align-items-center mb-5">
-            <div>
-                <h2 class="fw-bold mb-0">{% block header %}{% endblock %}</h2>
-                <p class="text-muted small">Bienvenue au terminal de Conakry Centre</p>
+        <header class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <button class="hamburger-btn" onclick="toggleSidebar()">
+                    <i data-lucide="menu" size="24"></i>
+                </button>
+                <div>
+                    <h2 class="fw-bold mb-0" style="font-size: clamp(1.2rem, 5vw, 2rem);">{% block header %}{% endblock %}</h2>
+                    <p class="text-muted small d-none d-sm-block mb-0">Bienvenue au terminal de Conakry Centre</p>
+                </div>
             </div>
             {% if current_user.is_authenticated %}
-            <div class="d-flex align-items-center gap-3 bg-white p-2 pe-3 rounded-pill shadow-sm">
+            <div class="d-flex align-items-center gap-2 bg-white p-2 pe-3 rounded-pill shadow-sm">
                 {% if current_user.image_url %}
                 <img src="{{ url_for('static', filename=current_user.image_url) }}"
                     class="rounded-circle object-fit-cover"
-                    style="width: 42px; height: 42px; border: 2px solid var(--brand-primary);">
+                    style="width: 36px; height: 36px; border: 2px solid var(--brand-primary);">
                 {% else %}
                 <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold"
-                    style="width: 42px; height: 42px;">
+                    style="width: 36px; height: 36px; font-size: 0.8rem;">
                     {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
                 </div>
                 {% endif %}
-                <div class="text-end">
-                    <div class="fw-bold small">{{ current_user.first_name }} {{ current_user.last_name }}</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">{{ current_user.role }}</div>
+                <div class="text-end d-none d-md-block">
+                    <div class="fw-bold small">{{ current_user.first_name }}</div>
+                    <div class="text-muted" style="font-size: 0.65rem;">{{ current_user.role }}</div>
                 </div>
             </div>
             {% endif %}
@@ -179,9 +234,14 @@
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Initialiser les icônes Lucide
+        // Initialiser les icnes Lucide
         lucide.createIcons();
-    </script>
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+    </script>t>
     {% block scripts %}{% endblock %}
 </body>
 
