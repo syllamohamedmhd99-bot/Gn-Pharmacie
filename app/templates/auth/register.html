@@ -6,14 +6,14 @@
 <div class="auth-card shadow-lg p-5 bg-white rounded-4 border-0">
     <div class="text-center mb-4">
         <i data-lucide="user-plus" class="text-primary mb-2" style="width: 48px; height: 48px;"></i>
-        <h3 class="fw-bold text-dark">Demande d'Entrée</h3>
-        <p class="text-muted small">Créez votre profil pour rejoindre l'équipe</p>
+        <h3 class="fw-bold text-dark">Demande d'Entr&eacute;e</h3>
+        <p class="text-muted small">Cr&eacute;ez votre profil pour rejoindre l'&eacute;quipe</p>
     </div>
 
     <form action="{{ url_for('auth.register') }}" method="POST">
         <div class="row g-3 mb-3">
             <div class="col-6">
-                <label class="form-label text-muted small fw-bold">PRÉNOM</label>
+                <label class="form-label text-muted small fw-bold">PR&Eacute;NOM</label>
                 <input type="text" name="first_name" class="form-control bg-light border-0 py-2" placeholder="Jean"
                     required>
             </div>
@@ -36,7 +36,7 @@
             <div class="input-group">
                 <span class="input-group-text bg-light border-0"><i data-lucide="lock" size="18"></i></span>
                 <input type="password" name="password" class="form-control bg-light border-0 py-2"
-                    placeholder="Minimum 8 caractères" required>
+                    placeholder="Minimum 8 caract&egrave;res" required>
             </div>
         </div>
         <div class="mb-4">
@@ -54,7 +54,7 @@
     </form>
 
     <div class="text-center mt-4">
-        <p class="text-muted small">Déjà un compte ? <a href="{{ url_for('auth.login') }}"
+        <p class="text-muted small">D&eacute;j&agrave; un compte ? <a href="{{ url_for('auth.login') }}"
                 class="text-primary fw-bold text-decoration-none">Se connecter</a></p>
     </div>
 </div>
