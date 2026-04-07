@@ -14,6 +14,10 @@ def create_app(config_name='default'):
     db.init_app(app)
     migrate.init_app(app, db)
     
+    @app.context_processor
+    def inject_now():
+        from datetime import datetime
+        return {'now': datetime.utcnow()}
 
     login_manager.init_app(app)
     mail.init_app(app)
