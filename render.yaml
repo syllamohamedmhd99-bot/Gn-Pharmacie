@@ -4,7 +4,7 @@ services:
     name: pharma-cloud-erp
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app
+    startCommand: python -c "from app import create_app, db; app=create_app('production'); with app.app_context(): db.create_all(); print('DB Ready')" && gunicorn run:app
     envVars:
       - key: FLASK_APP
         value: run.py
