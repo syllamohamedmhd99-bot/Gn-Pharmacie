@@ -1,3 +1,4 @@
+print("--- INITIALISATION PHARMACLOUD SYSTEM ---")
 from app import create_app
 from app.extensions import db
 import os
