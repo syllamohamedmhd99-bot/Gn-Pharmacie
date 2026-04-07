@@ -16,6 +16,8 @@ def create_app(config_name='default'):
     
 
     login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message_category = 'info'
 
     # Enregistrement des Blueprints
     from app.hr_management.routes import bp_hr
@@ -30,8 +32,13 @@ def create_app(config_name='default'):
 
     # Global Dashboard route
     @app.route('/')
-    @login_required
     def index():
+        if not current_user.is_authenticated:
+            return render_template('marketing/landing.html')
+            
+        if current_user.email == 'admin@pharma.com':
+            return redirect(url_for('super_admin'))
+
         # FILTRE SAAS: Statistiques de MA pharmacie
         total_medicines = Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).count()
         total_users = User.query.filter_by(pharmacy_id=current_user.pharmacy_id).count()
@@ -48,7 +55,7 @@ def create_app(config_name='default'):
         
         low_stock = [m for m in Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).all() 
                     if m.total_stock <= m.min_stock_level]
-                
+        
         return render_template('index.html', 
                                total_medicines=total_medicines,
                                total_users=total_users,
@@ -191,28 +198,81 @@ def create_app(config_name='default'):
         pharma = Pharmacy.query.get_or_404(id)
         plan = request.form.get('plan')
         
-        # Logique de durée
+        # Logique de prix et durée
         days = 0
-        if plan == 'Mensuel': days = 30
-        elif plan == 'Trimestriel': days = 90
-        elif plan == 'Semestriel': days = 180
-        elif plan == 'Annuel': days = 365
+        amount = 0
+        if plan == 'Mensuel': 
+            days = 30
+            amount = 150000
+        elif plan == 'Trimestriel': 
+            days = 90
+            amount = 250000
+        elif plan == 'Semestriel': 
+            days = 180
+            amount = 500000
+        elif plan == 'Annuel': 
+            days = 365
+            amount = 950000
         
         if days > 0:
-            # Si déjà actif, on ajoute à la date de fin. Sinon on part d'aujourd'hui.
+            # Enregistrement de la transaction
+            from app.models import SubscriptionRecord
+            record = SubscriptionRecord(
+                pharmacy_id=pharma.id,
+                plan_name=plan,
+                amount=amount
+            )
+            db.session.add(record)
+
+            # Mise à jour de la pharmacie
             start_date = pharma.subscription_end_date if pharma.subscription_end_date and pharma.subscription_end_date > datetime.utcnow() else datetime.utcnow()
             pharma.subscription_end_date = start_date + timedelta(days=days)
             pharma.subscription_plan = plan
-            pharma.is_active = True # Activer auto au paiement
+            pharma.is_active = True
             
-            # Activer les admins
             for u in pharma.users:
                 if u.role == 'Admin':
                     u.is_active = True
             
             db.session.commit()
-            flash(f"Abonnement {plan} activé pour {pharma.name} jusqu'au {pharma.subscription_end_date.strftime('%d/%m/%Y')}", "success")
+            flash(f"Abonnement {plan} activé pour {pharma.name}. Transaction enregistrée.", "success")
         
         return redirect(url_for('super_admin'))
+
+    @app.route('/superadmin/reports')
+    @login_required
+    def super_admin_reports():
+        if current_user.email != 'admin@pharma.com':
+            return redirect(url_for('index'))
+        
+        from app.models import SubscriptionRecord
+        history = SubscriptionRecord.query.order_by(SubscriptionRecord.timestamp.desc()).all()
+        return render_template('superadmin/reports.html', history=history)
+
+    @app.route('/superadmin/export/payments')
+    @login_required
+    def export_payments():
+        if current_user.email != 'admin@pharma.com':
+            return "Unauthorized", 401
+        
+        import csv
+        from io import StringIO
+        from flask import make_response
+        from app.models import SubscriptionRecord
+        
+        history = SubscriptionRecord.query.all()
+        
+        si = StringIO()
+        cw = csv.writer(si)
+        cw.writerow(['ID', 'Pharmacie', 'Forfait', 'Montant (GNF)', 'Date'])
+        
+        for record in history:
+            pharma_name = Pharmacy.query.get(record.pharmacy_id).name
+            cw.writerow([record.id, pharma_name, record.plan_name, record.amount, record.timestamp.strftime('%d/%m/%Y %H:%M')])
+        
+        output = make_response(si.getvalue())
+        output.headers["Content-Disposition"] = "attachment; filename=rapport_paiements_saas.csv"
+        output.headers["Content-type"] = "text/csv"
+        return output
 
     return app

@@ -1,0 +1,68 @@
+{% extends "superadmin/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">Rapports & Exports</h2>
+        <p class="text-muted">Consultez l'historique financier et exportez vos données.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('export_payments') }}" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+            <i data-lucide="download" size="18" class="me-2"></i> Exporter Historique (CSV)
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- Sommaire financier -->
+    <div class="col-md-4">
+        <div class="card stat-card border-0 shadow-sm p-4 bg-white">
+            <div class="text-muted small fw-bold mb-2">NOMBRE DE TRANSACTIONS</div>
+            <div class="h2 fw-bold mb-0 text-success">{{ history|length }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Historique des Paiements -->
+<div class="card stat-card border-0 shadow-sm overflow-hidden">
+    <div class="card-header bg-white p-4 border-0">
+        <h5 class="fw-bold mb-0">Historique des Renouvellements</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small fw-bold">
+                <tr>
+                    <th class="ps-4">ID</th>
+                    <th>PHARMACIE</th>
+                    <th>FORFAIT CHOISI</th>
+                    <th>MONTANT ENCAISSÉ</th>
+                    <th class="text-end pe-4">DATE & HEURE</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if history %}
+                {% for record in history %}
+                <tr>
+                    <td class="ps-4 text-muted small">#{{ record.id }}</td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ record.pharmacy.name }}</div>
+                    </td>
+                    <td><span class="badge bg-dark rounded-pill px-3">{{ record.plan_name }}</span></td>
+                    <td>
+                        <div class="fw-bold text-success">{{ "{:,.0f}".format(record.amount).replace(',', ' ') }} GNF</div>
+                    </td>
+                    <td class="text-end pe-4 text-muted small">
+                        {{ record.timestamp.strftime('%d/%m/%Y à %H:%M') }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">Aucune transaction enregistrée.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

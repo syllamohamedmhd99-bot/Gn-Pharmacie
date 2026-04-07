@@ -191,3 +191,15 @@ class SalaryAdvance(db.Model):
     status = db.Column(db.String(50), default='Pending') # Pending (En cours), Deducted (Déduite du salaire)
 
     user = db.relationship('User', backref='advances', lazy=True)
+class SubscriptionRecord(db.Model):
+    __tablename__ = 'subscription_records'
+    id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    plan_name = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Float, default=0.0)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    pharmacy = db.relationship('Pharmacy', backref='payments', lazy=True)
+
+    def __repr__(self):
+        return f'<SubscriptionRecord {self.plan_name} for Pharma {self.pharmacy_id}>'

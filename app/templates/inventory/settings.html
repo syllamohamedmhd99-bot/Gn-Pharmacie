@@ -15,7 +15,14 @@
                     <p class="mb-0 opacity-75">Plan : <strong>{{ pharmacy.subscription_plan }}</strong></p>
                 </div>
                 <div class="text-end">
-                    <div class="h4 fw-bold mb-0">Expire le {{ pharmacy.subscription_end_date.strftime('%d/%m/%Y') }}</div>
+                    <div class="h4 fw-bold mb-0">
+                        Expire le 
+                        {% if pharmacy.subscription_end_date %}
+                            {{ pharmacy.subscription_end_date.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            Indéfini
+                        {% endif %}
+                    </div>
                     <span class="badge bg-white text-primary rounded-pill px-3 mt-1">Actif</span>
                 </div>
             </div>

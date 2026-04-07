@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
-from flask_login import login_required
+from flask_login import login_required, current_user
 from app.auth.decorators import admin_required, permission_required
 from app.extensions import db
 from app.models import Sale, Medicine, SaleItem
