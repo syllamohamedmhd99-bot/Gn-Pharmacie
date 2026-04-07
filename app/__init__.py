@@ -330,8 +330,12 @@ def create_app(config_name='default'):
         flash(f"La pharmacie {pharma.name} a été validée avec succès !", "success")
         return redirect(url_for('super_admin_subscriptions'))
 
-    # Auto-initialisation de la base (SaaS)
-    with app.app_context():
-        db.create_all()
+    # Auto-initialisation de la base (SaaS) - Protégé pour éviter 502
+    try:
+        with app.app_context():
+            db.create_all()
+        print("--- BASE DE DONNEES SYNCHRONISEE ---")
+    except Exception as e:
+        print(f"--- ERREUR INITIALISATION DB : {str(e)} ---")
     
     return app
