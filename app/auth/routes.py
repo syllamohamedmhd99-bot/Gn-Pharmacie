@@ -113,7 +113,7 @@ def register_admin():
         except Exception as e:
             db.session.rollback()
             print(f"--- ERREUR CRITIQUE BASE DE DONNÉES : {str(e)} ---")
-            flash("Une erreur est survenue lors de l'enregistrement. Veuillez réessayer.", "danger")
+            flash(f"Erreur d'enregistrement : {str(e)}", "danger")
             return redirect(url_for('auth.register'))
         
         # 4. Alerte Email au Super-Admin
