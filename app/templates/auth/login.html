@@ -47,11 +47,60 @@
     </div>
 </div>
 
+<!-- Section des Forfaits d'Abonnement -->
+<div class="mt-5 w-100" style="max-width: 800px;">
+    <div class="text-center mb-4">
+        <h5 class="fw-bold text-dark">Nos Forfaits d'Abonnement</h5>
+        <p class="text-muted small">Choisissez le plan qui convient à votre officine</p>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm text-center h-100">
+                <div class="fw-bold small">ESSAI</div>
+                <div class="h4 fw-bold text-primary my-2">0 <small style="font-size: 0.6rem;">GNF</small></div>
+                <div class="text-muted" style="font-size: 10px;">30 Jours</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm text-center h-100 border-top border-3 border-primary">
+                <div class="fw-bold small">MENSUEL</div>
+                <div class="h4 fw-bold text-primary my-2">150k <small style="font-size: 0.6rem;">GNF</small></div>
+                <div class="text-muted" style="font-size: 10px;">Sans engagement</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm text-center h-100">
+                <div class="fw-bold small text-success">TRIMESTRIEL</div>
+                <div class="h4 fw-bold text-success my-2">250k <small style="font-size: 0.6rem;">GNF</small></div>
+                <div class="text-muted" style="font-size: 10px;">Le plus populaire</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 border-0 shadow-sm text-center h-100">
+                <div class="fw-bold small">ANNUEL</div>
+                <div class="h4 fw-bold text-dark my-2">950k <small style="font-size: 0.6rem;">GNF</small></div>
+                <div class="text-muted" style="font-size: 10px;">Tranquillité 1 an</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .auth-card {
         max-width: 450px;
         width: 100%;
         animation: fadeIn 0.5s ease-out;
+    }
+    
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem;
+        background: radial-gradient(circle at top right, #eaf1ff, transparent),
+                    radial-gradient(circle at bottom left, #f1fdf4, transparent);
     }
 
     @keyframes fadeIn {
