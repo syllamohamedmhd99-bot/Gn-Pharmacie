@@ -20,12 +20,15 @@ def dashboard():
     today_date = date.today()
     near_date = today_date + timedelta(days=30)
     
+    suppliers_list = Supplier.query.all()
+    
     return render_template('inventory/dashboard.html', 
                            medicines=medicines, 
                            batches=batches, 
                            total_value=total_stock_value,
                            today_date=today_date,
-                           near_date=near_date)
+                           near_date=near_date,
+                           suppliers_list=suppliers_list)
 
 
 @bp_inventory.route('/medicine/add', methods=['POST'])
@@ -34,9 +37,13 @@ def add_medicine():
     price = request.form.get('price')
     min_stock = request.form.get('min_stock', 10)
     barcode = request.form.get('barcode', None)
+    supplier_id = request.form.get('supplier_id')
     
     if name and price:
-        med = Medicine(name=name, default_price=float(price), min_stock_level=int(min_stock), barcode=barcode)
+        med = Medicine(name=name, default_price=float(price), 
+                       min_stock_level=int(min_stock), barcode=barcode)
+        if supplier_id:
+            med.supplier_id = int(supplier_id)
         db.session.add(med)
         db.session.commit()
         flash("Médicament ajouté avec succès", "success")
@@ -91,11 +98,29 @@ def suppliers():
 def add_supplier():
     name = request.form.get('name')
     email = request.form.get('email')
+    phone = request.form.get('phone')
+    address = request.form.get('address')
+    contact_person = request.form.get('contact_person')
+    description = request.form.get('description')
+    
     if name and email:
-        sup = Supplier(name=name, email=email)
+        sup = Supplier(name=name, email=email, phone=phone, 
+                       address=address, contact_person=contact_person, 
+                       description=description)
         db.session.add(sup)
         db.session.commit()
-        flash(f"Fournisseur {name} ajouté", "success")
+        flash(f"Fournisseur {name} ajouté avec succès", "success")
+    return redirect(url_for('inventory.suppliers'))
+
+@bp_inventory.route('/supplier/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_supplier(id):
+    sup = Supplier.query.get_or_404(id)
+    # Détacher les médicaments
+    Medicine.query.filter_by(supplier_id=id).update({Medicine.supplier_id: None})
+    db.session.delete(sup)
+    db.session.commit()
+    flash(f"Fournisseur {sup.name} supprimé", "warning")
     return redirect(url_for('inventory.suppliers'))
 
 @bp_inventory.route('/order/update_status/<int:id>', methods=['POST'])

@@ -1,132 +1,144 @@
 {% extends "base.html" %}
 
-{% block title %}Gestion des Fournisseurs - PharmaCloud ERP{% endblock %}
+{% block title %}Fournisseurs - PharmaCloud ERP{% endblock %}
+{% block header %}Gestion des Fournisseurs{% endblock %}
 
 {% block content %}
-<div class="suppliers-container p-4">
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <h2 class="text-primary"><i class="fas fa-truck me-2"></i>Fournisseurs & Commandes</h2>
+<div class="row mb-5">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <p class="text-muted mb-0">Gérez vos relations avec les laboratoires et grossistes</p>
         </div>
-        <div class="col-md-6 text-end">
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
-                <i class="fas fa-plus me-2"></i>Nouveau Fournisseur
-            </button>
-        </div>
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+            <i data-lucide="plus" class="me-2"></i>Nouveau Fournisseur
+        </button>
     </div>
+</div>
 
-    <div class="row">
-        <!-- Liste des Fournisseurs -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">Mes Fournisseurs</h5>
+<div class="row g-4">
+    {% for s in suppliers %}
+    <div class="col-md-6 col-xl-4 text-start">
+        <div class="card h-100 border-0 shadow-sm p-4 rounded-4 transition-all hover-shadow">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                    <i data-lucide="truck" class="text-primary" size="24"></i>
                 </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        {% for s in suppliers %}
-                        <div class="list-group-item px-0">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-0">{{ s.name }}</h6>
-                                    <small class="text-muted">{{ s.email }}</small>
-                                </div>
-                                <span class="badge bg-light text-primary border">{{ s.medicines|length }}
-                                    produits</span>
-                            </div>
-                        </div>
-                        {% else %}
-                        <p class="text-center text-muted my-4">Aucun fournisseur enregistré.</p>
-                        {% endfor %}
-                    </div>
+                <div class="dropdown">
+                    <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                        <i data-lucide="more-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3">
+                        <li>
+                            <form action="{{ url_for('inventory.delete_supplier', id=s.id) }}" method="POST" 
+                                  onsubmit="return confirm('Supprimer ce fournisseur ?');">
+                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
+                                    <i data-lucide="trash-2" size="16"></i> Supprimer
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        </div>
 
-        <!-- Historique des Commandes -->
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0">Bons de Commande</h5>
+            <h5 class="fw-bold text-dark mb-1">{{ s.name }}</h5>
+            <p class="text-primary small fw-semibold mb-3">
+                <i data-lucide="user" size="14" class="me-1"></i> {{ s.contact_person or 'Aucun contact défini' }}
+            </p>
+
+            <div class="d-grid gap-2 mb-4">
+                <div class="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
+                    <div class="text-muted"><i data-lucide="phone" size="16"></i></div>
+                    <div class="small fw-medium">{{ s.phone or 'Pas de téléphone' }}</div>
                 </div>
-                <div class="card-body">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#ID</th>
-                                <th>Fournisseur</th>
-                                <th>Produit</th>
-                                <th>Quantité</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for o in orders %}
-                            <tr>
-                                <td>{{ o.id }}</td>
-                                <td>{{ o.supplier.name if o.supplier else 'N/A' }}</td>
-                                <td>{{ o.medicine.name if o.medicine else 'N/A' }}</td>
-                                <td>{{ o.requested_quantity }}</td>
-                                <td>
-                                    <span
-                                        class="badge {% if o.status == 'Draft' %}bg-secondary{% elif o.status == 'Sent' %}bg-primary{% elif o.status == 'Received' %}bg-success{% else %}bg-danger{% endif %}">
-                                        {{ o.status }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <form action="{{ url_for('inventory.update_order_status', id=o.id) }}" method="POST"
-                                        class="d-inline">
-                                        <select name="status" class="form-select form-select-sm d-inline-block w-auto"
-                                            onchange="this.form.submit()">
-                                            <option value="" disabled selected>Changer...</option>
-                                            <option value="Sent">Envoyé</option>
-                                            <option value="Received">Reçu</option>
-                                            <option value="Cancelled">Annulé</option>
-                                        </select>
-                                    </form>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">Aucune commande en cours.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
+                    <div class="text-muted"><i data-lucide="mail" size="16"></i></div>
+                    <div class="small fw-medium text-truncate">{{ s.email }}</div>
+                </div>
+                <div class="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
+                    <div class="text-muted"><i data-lucide="map-pin" size="16"></i></div>
+                    <div class="small fw-medium text-truncate">{{ s.address or 'Adresse non définie' }}</div>
+                </div>
+            </div>
+
+            <div class="border-top pt-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-bold">PRODUITS FOURNIS</span>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill">{{ s.products|length }}</span>
+                </div>
+                <div class="d-flex flex-wrap gap-1">
+                    {% for p in s.products[:3] %}
+                        <span class="badge bg-light text-dark border fw-normal">{{ p.name }}</span>
+                    {% endfor %}
+                    {% if s.products|length > 3 %}
+                        <span class="badge bg-light text-muted border fw-normal">+{{ s.products|length - 3 }}</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <div class="bg-light rounded-circle d-inline-flex p-5 mb-3">
+            <i data-lucide="truck" size="64" class="text-muted opacity-25"></i>
+        </div>
+        <h4 class="text-muted">Aucun fournisseur</h4>
+        <p class="text-muted small">Commencez par ajouter votre premier partenaire logistique.</p>
+    </div>
+    {% endfor %}
 </div>
 
 <!-- Modal Ajout Fournisseur -->
 <div class="modal fade" id="addSupplierModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="{{ url_for('inventory.add_supplier') }}" method="POST">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nouveau Fournisseur</h5>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form action="{{ url_for('inventory.add_supplier') }}" method="POST">
+                <div class="modal-header border-0 p-4">
+                    <h5 class="modal-title fw-bold">Nouveau Partenaire</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-4 pt-0">
                     <div class="mb-3">
-                        <label class="form-label">Nom du Fournisseur</label>
-                        <input type="text" name="name" class="form-control" placeholder="ex: Pharmacie Centrale"
-                            required>
+                        <label class="form-label small fw-bold">NOM DE L'ENTREPRISE</label>
+                        <input type="text" name="name" class="form-control bg-light border-0 py-2" required>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">PERSONNE DE CONTACT</label>
+                            <input type="text" name="contact_person" class="form-control bg-light border-0 py-2">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">TÉLÉPHONE</label>
+                            <input type="text" name="phone" class="form-control bg-light border-0 py-2">
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Email de Contact</label>
-                        <input type="email" name="email" class="form-control" placeholder="contact@fournisseur.com"
-                            required>
+                        <label class="form-label small fw-bold">EMAIL</label>
+                        <input type="email" name="email" class="form-control bg-light border-0 py-2" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">ADRESSE DU SIÈGE</label>
+                        <textarea name="address" class="form-control bg-light border-0" rows="2"></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">NOTES / DESCRIPTION</label>
+                        <textarea name="description" class="form-control bg-light border-0" rows="2"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 fw-bold">ENREGISTRER FOURNISSEUR</button>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
+
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+    }
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+</style>
 {% endblock %}

@@ -72,6 +72,14 @@ class Supplier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), nullable=False)
+    phone = db.Column(db.String(50), nullable=True)
+    address = db.Column(db.String(255), nullable=True)
+    contact_person = db.Column(db.String(100), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Relation pour voir tous les produits fournis par ce fournisseur
+    products = db.relationship('Medicine', backref='supplier', lazy=True)
+    orders = db.relationship('PurchaseOrder', backref='supplier', lazy=True)
 
 class PurchaseOrder(db.Model):
     __tablename__ = 'purchase_orders'

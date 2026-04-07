@@ -191,6 +191,15 @@
                         <div class="form-text">Le système vous alertera quand le stock sera inférieur à ce nombre.</div>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label fw-bold small">FOURNISSEUR</label>
+                        <select name="supplier_id" class="form-select bg-light border-0">
+                            <option value="">-- Choisir un fournisseur --</option>
+                            {% for s in suppliers_list %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label fw-bold">Code-barres (Optionnel)</label>
                         <input type="text" name="barcode" class="form-control">
                     </div>
