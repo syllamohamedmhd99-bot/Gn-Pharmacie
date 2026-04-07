@@ -157,7 +157,7 @@ def delete_supplier(id):
 @bp_inventory.route('/order/update_status/<int:id>', methods=['POST'])
 @login_required
 def update_order_status(id):
-    order = PurchaseOrder.query.get_or_404(id)
+    order = PurchaseOrder.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     new_status = request.form.get('status')
     if new_status in ['Sent', 'Received', 'Cancelled']:
         order.status = new_status

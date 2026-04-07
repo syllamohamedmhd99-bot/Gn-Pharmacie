@@ -165,19 +165,19 @@
             </a>
 
             {% if current_user.can_view_pos or current_user.role == 'Admin' %}
-            <a class="nav-link {% if 'pos' in request.endpoint %}active{% endif %}" href="/pos/terminal">
+            <a class="nav-link {% if 'pos' in request.endpoint %}active{% endif %}" href="{{ url_for('pos.terminal') }}">
                 <i data-lucide="shopping-cart" size="20"></i> Terminal de Vente
             </a>
             {% endif %}
 
             {% if current_user.can_view_inventory or current_user.role == 'Admin' %}
-            <a class="nav-link {% if 'inventory' in request.endpoint %}active{% endif %}" href="/inventory/dashboard">
+            <a class="nav-link {% if 'inventory' in request.endpoint %}active{% endif %}" href="{{ url_for('inventory.dashboard') }}">
                 <i data-lucide="package" size="20"></i> Stock & FEFO
             </a>
             {% endif %}
 
             {% if current_user.can_view_hr or current_user.role == 'Admin' %}
-            <a class="nav-link {% if request.path.startswith('/hr') and 'directory' not in request.path and 'history' not in request.path %}active{% endif %}" href="/hr/dashboard">
+            <a class="nav-link {% if request.path.startswith('/hr') and 'directory' not in request.path and 'history' not in request.path %}active{% endif %}" href="{{ url_for('hr.dashboard') }}">
                 <i data-lucide="users" size="20"></i> RH & Plannings
             </a>
             {% endif %}
@@ -185,14 +185,14 @@
             {% if current_user.can_view_admin or current_user.role == 'Admin' %}
             <div class="text-muted small fw-bold px-3 mt-3 mb-1" style="font-size: 0.65rem;">ADMINISTRATION</div>
             {% if current_user.role == 'Admin' %}
-            <a class="nav-link {% if 'settings' in request.path %}active{% endif %}" href="/inventory/settings">
+            <a class="nav-link {% if 'settings' in request.path %}active{% endif %}" href="{{ url_for('inventory.settings') }}">
                 <i data-lucide="settings" size="20"></i> Paramètres Pharmacie
             </a>
             {% endif %}
-            <a class="nav-link {% if 'directory' in request.path %}active{% endif %}" href="/hr/directory">
+            <a class="nav-link {% if 'directory' in request.path %}active{% endif %}" href="{{ url_for('hr.directory') }}">
                 <i data-lucide="contact" size="20"></i> Annuaire & Paie
             </a>
-            <a class="nav-link {% if 'history' in request.path %}active{% endif %}" href="/hr/history">
+            <a class="nav-link {% if 'history' in request.path %}active{% endif %}" href="{{ url_for('hr.history') }}">
                 <i data-lucide="clock" size="20"></i> Historique Pointages
             </a>
             {% endif %}

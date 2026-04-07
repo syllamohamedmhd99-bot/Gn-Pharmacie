@@ -140,13 +140,21 @@ def create_app(config_name='default'):
             
             total_global_revenue = db.session.query(func.sum(Sale.total_amount)).scalar() or 0
             
-            # Répartition par pharmacie (Top Performance)
+            # Optimisation: Répartition par pharmacie (Top Performance)
             pharma_stats = []
+            revenue_by_pharma = db.session.query(
+                Sale.pharmacy_id, 
+                func.sum(Sale.total_amount).label('total')
+            ).group_by(Sale.pharmacy_id).all()
+            
+            revenue_map = {r.pharmacy_id: r.total for r in revenue_by_pharma}
+            
             for p in pharmacies:
-                rev = db.session.query(func.sum(Sale.total_amount)).filter_by(pharmacy_id=p.id).scalar() or 0
                 pharma_stats.append({
+                    'id': p.id,
                     'name': p.name,
-                    'revenue': rev
+                    'is_active': p.is_active,
+                    'revenue': revenue_map.get(p.id, 0)
                 })
             
             return render_template('superadmin/dashboard.html', 

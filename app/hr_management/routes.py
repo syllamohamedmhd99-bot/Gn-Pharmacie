@@ -61,7 +61,7 @@ def delete_clock(clock_id):
 @login_required
 @admin_required
 def edit_clock(clock_id):
-    clock = TimeClock.query.get_or_404(clock_id)
+    clock = TimeClock.query.filter_by(id=clock_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     new_action = request.form.get('action_type')
     new_time_str = request.form.get('timestamp') # Format attntu: YYYY-MM-DDTHH:MM
     
@@ -118,7 +118,7 @@ def add_employee():
 @login_required
 @admin_required
 def toggle_user_status(user_id):
-    user = User.query.get_or_404(user_id)
+    user = User.query.filter_by(id=user_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     if user.id == current_user.id:
         flash("Vous ne pouvez pas désactiver votre propre compte.", "warning")
     else:
@@ -132,7 +132,7 @@ def toggle_user_status(user_id):
 @login_required
 @admin_required
 def delete_user(user_id):
-    user = User.query.get_or_404(user_id)
+    user = User.query.filter_by(id=user_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     if user.id == current_user.id:
         flash("Vous ne pouvez pas supprimer votre propre compte.", "danger")
     else:
@@ -145,11 +145,14 @@ def delete_user(user_id):
 @login_required
 @admin_required
 def update_permissions(user_id):
-    user = User.query.get_or_404(user_id)
+    # FILTRE SÉCURITÉ SAAS
+    user = User.query.filter_by(id=user_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+    
     user.can_view_pos = 'can_view_pos' in request.form
     user.can_view_inventory = 'can_view_inventory' in request.form
     user.can_view_hr = 'can_view_hr' in request.form
     user.can_view_admin = 'can_view_admin' in request.form
+    
     db.session.commit()
     flash(f"Permissions de {user.first_name} mises à jour.", "success")
     return redirect(url_for('hr.directory'))
@@ -217,7 +220,7 @@ def process_payroll(user_id):
 @login_required
 @admin_required
 def update_payroll(record_id):
-    record = PayrollRecord.query.get_or_404(record_id)
+    record = PayrollRecord.query.filter_by(id=record_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     try:
         record.total_paid = float(request.form.get('amount'))
         record.worked_hours = float(request.form.get('hours'))
@@ -231,7 +234,7 @@ def update_payroll(record_id):
 @login_required
 @admin_required
 def delete_payroll(record_id):
-    record = PayrollRecord.query.get_or_404(record_id)
+    record = PayrollRecord.query.filter_by(id=record_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     db.session.delete(record)
     db.session.commit()
     flash("Enregistrement de paie supprimé.", "success")
@@ -317,7 +320,7 @@ def add_advance(user_id):
 @login_required
 @admin_required
 def upload_proof(record_id):
-    record = PayrollRecord.query.get_or_404(record_id)
+    record = PayrollRecord.query.filter_by(id=record_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     file = request.files.get('proof')
     
     if file and file.filename:
@@ -337,7 +340,7 @@ def upload_proof(record_id):
 @login_required
 @admin_required
 def view_payslip(record_id):
-    record = PayrollRecord.query.get_or_404(record_id)
+    record = PayrollRecord.query.filter_by(id=record_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
     return render_template('hr/payslip.html', record=record)
 
 @bp_hr.route('/employee/upload_photo/<int:user_id>', methods=['POST'])
