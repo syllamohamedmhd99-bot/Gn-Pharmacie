@@ -97,7 +97,26 @@ def register_admin():
         db.session.add(new_user)
         db.session.commit()
         
+        # Alerte Email au Super-Admin
+        try:
+            from flask_mail import Message
+            from app.extensions import mail
+            msg = Message("Nouvelle demande d'inscription - PharmaCloud",
+                          recipients=["admin@pharma.com"])
+            msg.body = f"Bonjour,\n\nUne nouvelle pharmacie s'est inscrite sur la plateforme :\n" \
+                       f"Nom : {session.get('reg_pharma_name')}\n" \
+                       f"Admin : {first_name} {last_name} ({email})\n" \
+                       f"Licence : {session.get('reg_pharma_license')}\n\n" \
+                       f"Veuillez vous connecter à la console SaaS pour valider cet accès.\n\n" \
+                       f"Cordialement,\nSystème PharmaCloud"
+            mail.send(msg)
+        except Exception as e:
+            print(f"Erreur envoi email alerte : {str(e)}")
+            # On ne bloque pas l'inscription si l'email échoue
+            
         session.pop('reg_pharma_name', None)
+        session.pop('reg_pharma_address', None)
+        session.pop('reg_pharma_license', None)
         
         flash('Demande d\'inscription envoyée ! Votre compte sera activé par le Super-Admin sous peu.', 'info')
         return redirect(url_for('auth.login'))

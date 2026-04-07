@@ -102,7 +102,7 @@
             <a href="{{ url_for('super_admin_reports') }}" class="nav-admin-link {% if request.endpoint == 'super_admin_reports' %}active{% endif %}">
                 <i data-lucide="pie-chart"></i> Rapports & Exports
             </a>
-            <a href="#" class="nav-admin-link">
+            <a href="{{ url_for('super_admin_subscriptions') }}" class="nav-admin-link {% if request.endpoint == 'super_admin_subscriptions' %}active{% endif %}">
                 <i data-lucide="credit-card"></i> Abonnements
             </a>
             <div class="mt-5 pt-5">

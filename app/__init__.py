@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
 from config import config
-from app.extensions import db, migrate, login_manager
+from app.extensions import db, migrate, login_manager, mail
 from app.models import User, Medicine, Batch, Sale, SaleItem, Pharmacy
 from flask_login import current_user
 from datetime import datetime, timedelta
@@ -16,6 +16,7 @@ def create_app(config_name='default'):
     
 
     login_manager.init_app(app)
+    mail.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
 
@@ -147,7 +148,8 @@ def create_app(config_name='default'):
             return render_template('superadmin/dashboard.html', 
                                    pharmacies=pharmacies,
                                    total_global_revenue=total_global_revenue,
-                                   pharma_stats=pharma_stats)
+                                   pharma_stats=pharma_stats,
+                                   now=datetime.utcnow())
         except Exception as e:
             flash(f"Erreur d'accès Dashboard : {str(e)}", "danger")
             # Version de secours sans stats si ça échoue
@@ -285,5 +287,31 @@ def create_app(config_name='default'):
         output.headers["Content-Disposition"] = "attachment; filename=rapport_paiements_saas.csv"
         output.headers["Content-type"] = "text/csv"
         return output
+
+    @app.route('/superadmin/subscriptions')
+    @login_required
+    def super_admin_subscriptions():
+        if current_user.email != 'admin@pharma.com':
+            return redirect(url_for('index'))
+            
+        pharmacies = Pharmacy.query.order_by(Pharmacy.id.desc()).all()
+        return render_template('superadmin/subscriptions.html', pharmacies=pharmacies, now=datetime.utcnow())
+
+    @app.route('/superadmin/approve_pharmacy/<int:id>', methods=['POST'])
+    @login_required
+    def approve_pharmacy(id):
+        if current_user.email != 'admin@pharma.com':
+            return "Unauthorized", 401
+            
+        pharma = Pharmacy.query.get_or_404(id)
+        pharma.is_active = True
+        
+        # Activer tous les utilisateurs de cette pharmacie
+        for user in pharma.users:
+            user.is_active = True
+            
+        db.session.commit()
+        flash(f"La pharmacie {pharma.name} a été validée avec succès !", "success")
+        return redirect(url_for('super_admin_subscriptions'))
 
     return app

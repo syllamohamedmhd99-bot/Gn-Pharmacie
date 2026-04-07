@@ -14,6 +14,22 @@
     </div>
 </div>
 
+{% set pending_count = pharmacies|selectattr('is_active', 'equalto', False)|list|length %}
+{% if pending_count > 0 %}
+<div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 mb-5 d-flex align-items-center gap-4">
+    <div class="bg-warning p-3 rounded-circle text-white shadow-sm">
+        <i data-lucide="user-plus" size="24"></i>
+    </div>
+    <div class="flex-grow-1">
+        <h5 class="fw-bold mb-1">Nouvelles demandes en attente !</h5>
+        <p class="mb-0 text-dark opacity-75">Vous avez <strong>{{ pending_count }}</strong> nouvelle(s) pharmacie(s) qui attendent leur validation pour commencer leur service.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('super_admin_subscriptions') }}" class="btn btn-dark rounded-pill px-4 fw-bold">Gérer les accès</a>
+    </div>
+</div>
+{% endif %}
+
 <div class="row g-4 mb-5">
     <!-- Graphique Performance -->
     <div class="col-lg-8">

@@ -21,6 +21,14 @@ class Config:
     SESSION_TYPE = os.environ.get('SESSION_TYPE') or 'filesystem'
     SESSION_PERMANENT = False
     SESSION_USE_SIGNER = True
+    
+    # Mail Settings (Default: Gmail)
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@pharma.com')
 
 class DevelopmentConfig(Config):
     DEBUG = True
