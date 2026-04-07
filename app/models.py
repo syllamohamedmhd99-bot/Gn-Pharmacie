@@ -15,8 +15,17 @@ class Pharmacy(db.Model):
     license_number = db.Column(db.String(100), unique=True, nullable=True)
     address = db.Column(db.String(255), nullable=True)
     phone = db.Column(db.String(50), nullable=True)
+    
+    # Identité Visuelle (Branding)
+    logo_url = db.Column(db.String(255), nullable=True)
+    invoice_header = db.Column(db.Text, nullable=True)
+    invoice_footer = db.Column(db.Text, nullable=True)
+    
+    # Gestion des Abonnements
+    subscription_plan = db.Column(db.String(50), default='Essai') # Essai, Mensuel, Trimestriel, Semestriel, Annuel
+    subscription_end_date = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=False)
 
     # Relationships
     users = db.relationship('User', backref='pharmacy', lazy=True)

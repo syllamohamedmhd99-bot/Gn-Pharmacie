@@ -139,4 +139,37 @@ def create_app(config_name='default'):
         flash(f"La pharmacie {pharma.name} a été {status} avec succès.", "success")
         return redirect(url_for('super_admin'))
 
+    @app.route('/superadmin/update_subscription/<int:id>', methods=['POST'])
+    @login_required
+    def update_subscription(id):
+        if current_user.email != 'admin@pharma.com':
+            return "Unauthorized", 401
+            
+        pharma = Pharmacy.query.get_or_404(id)
+        plan = request.form.get('plan')
+        
+        # Logique de durée
+        days = 0
+        if plan == 'Mensuel': days = 30
+        elif plan == 'Trimestriel': days = 90
+        elif plan == 'Semestriel': days = 180
+        elif plan == 'Annuel': days = 365
+        
+        if days > 0:
+            # Si déjà actif, on ajoute à la date de fin. Sinon on part d'aujourd'hui.
+            start_date = pharma.subscription_end_date if pharma.subscription_end_date and pharma.subscription_end_date > datetime.utcnow() else datetime.utcnow()
+            pharma.subscription_end_date = start_date + timedelta(days=days)
+            pharma.subscription_plan = plan
+            pharma.is_active = True # Activer auto au paiement
+            
+            # Activer les admins
+            for u in pharma.users:
+                if u.role == 'Admin':
+                    u.is_active = True
+            
+            db.session.commit()
+            flash(f"Abonnement {plan} activé pour {pharma.name} jusqu'au {pharma.subscription_end_date.strftime('%d/%m/%Y')}", "success")
+        
+        return redirect(url_for('super_admin'))
+
     return app

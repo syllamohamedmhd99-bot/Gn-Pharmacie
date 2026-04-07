@@ -46,19 +46,89 @@
                                 <span class="badge bg-danger text-white rounded-pill px-3">En attente</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                <div class="small fw-bold">{{ pharma.subscription_plan or 'Essai' }}</div>
+                                {% if pharma.subscription_end_date %}
+                                <div class="text-muted x-small">Expire le: {{ pharma.subscription_end_date.strftime('%d/%m/%Y') }}</div>
+                                {% endif %}
+                            </td>
                             <td><span class="badge bg-secondary-subtle text-secondary rounded-pill py-1 px-2 fw-normal">{{ pharma.license_number }}</span></td>
                             <td class="text-end pe-4">
-                                <form action="{{ url_for('toggle_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
-                                    {% if pharma.is_active %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-                                        Désactiver
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#renewModal{{ pharma.id }}">
+                                        Renouveler
                                     </button>
-                                    {% else %}
-                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
-                                        <i data-lucide="check-circle" size="14" class="me-1"></i> ACTIVER
-                                    </button>
-                                    {% endif %}
-                                </form>
+                                    <form action="{{ url_for('toggle_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
+                                        {% if pharma.is_active %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Désactiver</button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">ACTIVER</button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+
+                                <!-- Modal de Renouvellement -->
+                                <div class="modal fade" id="renewModal{{ pharma.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content rounded-4 border-0 shadow">
+                                            <div class="modal-header border-0 pb-0">
+                                                <h5 class="modal-title fw-bold">Abonnement : {{ pharma.name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form action="{{ url_for('update_subscription', id=pharma.id) }}" method="POST">
+                                                <div class="modal-body text-start">
+                                                    <p class="text-muted small">Sélectionnez le forfait après encaissement manuel.</p>
+                                                    <div class="list-group list-group-flush gap-2">
+                                                        <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer">
+                                                            <div class="d-flex align-items-center gap-3">
+                                                                <input class="form-check-input mt-0" type="radio" name="plan" value="Mensuel" required>
+                                                                <div>
+                                                                    <div class="fw-bold">1 Mois (30 jours)</div>
+                                                                    <div class="text-muted small">Standard</div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="badge bg-primary-subtle text-primary rounded-pill">150 000 GNF</span>
+                                                        </label>
+                                                        <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3">
+                                                            <div class="d-flex align-items-center gap-3">
+                                                                <input class="form-check-input mt-0" type="radio" name="plan" value="Trimestriel">
+                                                                <div>
+                                                                    <div class="fw-bold">3 Mois (Promo)</div>
+                                                                    <div class="text-muted small">Économique</div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="badge bg-primary-subtle text-primary rounded-pill">250 000 GNF</span>
+                                                        </label>
+                                                        <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3">
+                                                            <div class="d-flex align-items-center gap-3">
+                                                                <input class="form-check-input mt-0" type="radio" name="plan" value="Semestriel">
+                                                                <div>
+                                                                    <div class="fw-bold">6 Mois</div>
+                                                                    <div class="text-muted small">Sérénité</div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="badge bg-primary-subtle text-primary rounded-pill">500 000 GNF</span>
+                                                        </label>
+                                                        <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3">
+                                                            <div class="d-flex align-items-center gap-3">
+                                                                <input class="form-check-input mt-0" type="radio" name="plan" value="Annuel">
+                                                                <div>
+                                                                    <div class="fw-bold">1 An (Premium)</div>
+                                                                    <div class="text-muted small">Le meilleur choix</div>
+                                                                </div>
+                                                            </div>
+                                                            <span class="badge bg-primary-subtle text-primary rounded-pill">950 000 GNF</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0">
+                                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Valider Paiement</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}

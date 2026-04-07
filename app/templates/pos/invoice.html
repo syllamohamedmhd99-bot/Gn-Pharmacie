@@ -197,11 +197,22 @@
 
     <div class="receipt" id="invoice">
         <div class="header">
-            <div class="logo">PHARMA CLOUD</div>
+            {% if current_user.pharmacy.logo_url %}
+            <img src="{{ current_user.pharmacy.logo_url }}" alt="Logo" style="max-width: 100%; max-height: 80px; margin-bottom: 10px;">
+            {% else %}
+            <div class="logo">{{ current_user.pharmacy.name|upper }}</div>
+            {% endif %}
+            
             <div class="info">
-                SYLLA & CO PHARMACEUTIQUE<br>
-                Camine 2, Conakry, Guinée<br>
-                TC: +224 612 34 56 78
+                <strong>{{ current_user.pharmacy.name }}</strong><br>
+                {{ current_user.pharmacy.address or 'Adresse non définie' }}<br>
+                TC: {{ current_user.pharmacy.phone or '---' }}<br>
+                
+                {% if current_user.pharmacy.invoice_header %}
+                <div style="margin-top: 5px; border-top: 1px solid #f1f5f9; padding-top: 5px;">
+                    {{ current_user.pharmacy.invoice_header|replace('\n', '<br>')|safe }}
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -216,8 +227,8 @@
             <span>{{ sale.timestamp.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
         <div class="meta">
-            <span>Vendeur:</span>
-            <span>{{ "Admin" if sale.user_id == 1 else "Vendeur #" ~ sale.user_id }}</span>
+            <span>Client:</span>
+            <span>Comptoir</span>
         </div>
 
         <div class="divider"></div>
@@ -238,8 +249,7 @@
                         <div class="item-name">{{ item.batch.medicine.name }}</div>
                         <div class="item-meta">Lot: {{ item.batch.batch_number }}</div>
                     </td>
-                    <td style="text-align: right;">{{ "{:,.0f}".format(item.quantity *
-                        item.batch.medicine.default_price).replace(',', ' ') }}</td>
+                    <td style="text-align: right;">{{ "{:,.0f}".format(item.quantity * item.unit_price).replace(',', ' ') }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -259,9 +269,13 @@
         </div>
 
         <div class="footer">
+            {% if current_user.pharmacy.invoice_footer %}
+            {{ current_user.pharmacy.invoice_footer|replace('\n', '<br>')|safe }}
+            {% else %}
             <p>*** MERCI DE VOTRE CONFIANCE ***</p>
             <p>Les médicaments ne sont ni repris ni échangés.</p>
-            <p style="margin-top: 10px;">Propulsé par PharmaCloud ERP</p>
+            {% endif %}
+            <p style="margin-top: 10px; font-size: 8px;">Propulsé par PharmaCloud ERP</p>
         </div>
     </div>
 

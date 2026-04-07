@@ -75,6 +75,11 @@ def get_medicines():
 @bp_pos.route('/checkout', methods=['POST'])
 @login_required
 def checkout():
+    # SÉCURITÉ SAAS: Vérification de l'abonnement
+    from datetime import datetime
+    if current_user.pharmacy.subscription_end_date and current_user.pharmacy.subscription_end_date < datetime.utcnow():
+        return jsonify({"error": "Abonnement expiré. Veuillez contacter le Super-Admin pour renouveler."}), 403
+
     data = request.json
     if not data or 'items' not in data:
         return jsonify({"error": "Données invalides"}), 400

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User, Pharmacy
 from app.extensions import db
+from datetime import datetime, timedelta
 
 bp_auth = Blueprint('auth', __name__)
 
@@ -57,11 +58,14 @@ def register_admin():
             flash('Cet email est déjà utilisé.', 'danger')
             return redirect(url_for('auth.register_admin'))
             
-        # 1. Créer la Pharmacie (Inactive par défaut)
+        # 1. Créer la Pharmacie (Inactive par défaut + 30j essai)
+        trial_end = datetime.utcnow() + timedelta(days=30)
         new_pharmacy = Pharmacy(
             name=session['reg_pharma_name'],
             address=session['reg_pharma_address'],
             license_number=session['reg_pharma_license'],
+            subscription_plan='Essai',
+            subscription_end_date=trial_end,
             is_active=False # Verrouillé par défaut
         )
         db.session.add(new_pharmacy)

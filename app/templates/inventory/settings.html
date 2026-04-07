@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres de la Pharmacie - PharmaCloud{% endblock %}
+
+{% block header %}Configuration & Branding{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <!-- État de l'Abonnement -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 overflow-hidden">
+            <div class="card-body p-4 bg-primary text-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-1"><i data-lucide="crown" class="me-2"></i>Abonnement Actuel</h5>
+                    <p class="mb-0 opacity-75">Plan : <strong>{{ pharmacy.subscription_plan }}</strong></p>
+                </div>
+                <div class="text-end">
+                    <div class="h4 fw-bold mb-0">Expire le {{ pharmacy.subscription_end_date.strftime('%d/%m/%Y') }}</div>
+                    <span class="badge bg-white text-primary rounded-pill px-3 mt-1">Actif</span>
+                </div>
+            </div>
+        </div>
+
+        <form action="{{ url_for('inventory.settings') }}" method="POST">
+            <!-- Informations de Base -->
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-header bg-white p-4 pb-2 border-0">
+                    <h5 class="fw-bold mb-0">Informations Publiques</h5>
+                    <p class="text-muted small">Ces informations apparaîtront sur vos documents officiels.</p>
+                </div>
+                <div class="card-body p-4 pt-2">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label text-muted small fw-bold">NOM DE LA PHARMACIE</label>
+                            <input type="text" name="name" class="form-control rounded-3" value="{{ pharmacy.name }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">TÉLÉPHONE</label>
+                            <input type="text" name="phone" class="form-control rounded-3" value="{{ pharmacy.phone }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">ADRESSE</label>
+                            <input type="text" name="address" class="form-control rounded-3" value="{{ pharmacy.address }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-muted small fw-bold">URL DU LOGO (Web)</label>
+                            <input type="text" name="logo_url" class="form-control rounded-3" value="{{ pharmacy.logo_url }}" placeholder="https://votre-logo.com/logo.png">
+                            <p class="x-small text-muted mt-1">Collez l'URL de votre logo pour qu'il s'affiche sur vos factures.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personnalisation des Factures -->
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-header bg-white p-4 pb-2 border-0">
+                    <h5 class="fw-bold mb-0">Style des Factures</h5>
+                    <p class="text-muted small">Personnalisez l'en-tête et le pied de page de vos tickets de vente.</p>
+                </div>
+                <div class="card-body p-4 pt-2">
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">EN-TÊTE PERSONNALISÉ</label>
+                        <textarea name="invoice_header" class="form-control rounded-3" rows="3" placeholder="Ex: RCCM: GC-CON-001 | NIF: 00234567">{{ pharmacy.invoice_header or '' }}</textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label text-muted small fw-bold">PIED DE PAGE (Remerciements)</label>
+                        <textarea name="invoice_footer" class="form-control rounded-3" rows="3" placeholder="Ex: Merci de votre confiance ! Les médicaments ne sont ni repris ni échangés.">{{ pharmacy.invoice_footer or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid mb-5">
+                <button type="submit" class="btn btn-primary py-3 fw-bold rounded-3 shadow-sm">
+                    <i data-lucide="save" size="20" class="me-2"></i> ENREGISTRER LES MODIFICATIONS
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .cursor-pointer { cursor: pointer; }
+    .x-small { font-size: 0.75rem; }
+</style>
+{% endblock %}

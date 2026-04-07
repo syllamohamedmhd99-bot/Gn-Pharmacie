@@ -166,6 +166,12 @@ def payroll_history():
 @login_required
 @admin_required
 def process_payroll(user_id):
+    # SÉCURITÉ SAAS: Vérification de l'abonnement
+    from datetime import datetime
+    if current_user.pharmacy.subscription_end_date and current_user.pharmacy.subscription_end_date < datetime.utcnow():
+        flash("Votre abonnement a expiré. Veuillez contacter le Super-Admin pour renouveler.", "danger")
+        return redirect(url_for('hr.dashboard'))
+
     from datetime import datetime
     now = datetime.now()
     # Sécurité SaaS

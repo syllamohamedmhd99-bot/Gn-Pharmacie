@@ -184,6 +184,11 @@
 
             {% if current_user.can_view_admin or current_user.role == 'Admin' %}
             <div class="text-muted small fw-bold px-3 mt-3 mb-1" style="font-size: 0.65rem;">ADMINISTRATION</div>
+            {% if current_user.role == 'Admin' %}
+            <a class="nav-link {% if 'settings' in request.path %}active{% endif %}" href="/inventory/settings">
+                <i data-lucide="settings" size="20"></i> Paramètres Pharmacie
+            </a>
+            {% endif %}
             <a class="nav-link {% if 'directory' in request.path %}active{% endif %}" href="/hr/directory">
                 <i data-lucide="contact" size="20"></i> Annuaire & Paie
             </a>

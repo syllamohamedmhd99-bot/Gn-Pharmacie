@@ -35,6 +35,12 @@ def dashboard():
 @bp_inventory.route('/medicine/add', methods=['POST'])
 @login_required
 def add_medicine():
+    # SÉCURITÉ SAAS: Vérification de l'abonnement
+    from datetime import datetime
+    if current_user.pharmacy.subscription_end_date and current_user.pharmacy.subscription_end_date < datetime.utcnow():
+        flash("Votre abonnement a expiré. Veuillez contacter le Super-Admin pour renouveler.", "danger")
+        return redirect(url_for('inventory.dashboard'))
+
     name = request.form.get('name')
     price = request.form.get('price')
     purchase_price = request.form.get('purchase_price', 0.0)
@@ -158,3 +164,26 @@ def update_order_status(id):
         db.session.commit()
         flash(f"Statut de la commande #{id} mis à jour : {new_status}", "info")
     return redirect(url_for('inventory.suppliers'))
+
+@bp_inventory.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    # Seul l'admin de la pharmacie peut accéder
+    if current_user.role != 'Admin':
+        flash("Accès réservé à l'Administrateur.", "danger")
+        return redirect(url_for('index'))
+        
+    pharma = current_user.pharmacy
+    if request.method == 'POST':
+        pharma.name = request.form.get('name')
+        pharma.address = request.form.get('address')
+        pharma.phone = request.form.get('phone')
+        pharma.invoice_header = request.form.get('invoice_header')
+        pharma.invoice_footer = request.form.get('invoice_footer')
+        pharma.logo_url = request.form.get('logo_url')
+        
+        db.session.commit()
+        flash("Paramètres de la pharmacie mis à jour.", "success")
+        return redirect(url_for('inventory.settings'))
+        
+    return render_template('inventory/settings.html', pharmacy=pharma)
