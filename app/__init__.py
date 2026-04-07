@@ -318,4 +318,8 @@ def create_app(config_name='default'):
         flash(f"La pharmacie {pharma.name} a été validée avec succès !", "success")
         return redirect(url_for('super_admin_subscriptions'))
 
+    # Auto-initialisation de la base (SaaS)
+    with app.app_context():
+        db.create_all()
+    
     return app
