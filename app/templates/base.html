@@ -247,6 +247,10 @@
         </header>
 
         {% block content %}{% endblock %}
+
+        <div class="mt-5 pt-5 text-center text-muted" style="font-size: 0.7rem; opacity: 0.5;">
+            PharmaCloud v2.1-DEBUG | <span class="text-primary">{{ now.strftime('%H:%M') if now else '' }}</span>
+        </div>
     </main>
 
     <!-- Bootstrap 5 JS -->
