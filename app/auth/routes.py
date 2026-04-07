@@ -67,49 +67,69 @@ def register_admin():
             flash('Cet email est déjà utilisé.', 'danger')
             return redirect(url_for('auth.register_admin'))
             
+        # 1. Vérification de la Session (Sécurité)
+        pharma_name = session.get('reg_pharma_name')
+        if not pharma_name:
+            flash("Informations de pharmacie manquantes. Veuillez recommencer l'étape 1.", "warning")
+            return redirect(url_for('auth.register_pharma'))
+
         # 1. Créer la Pharmacie (Inactive par défaut + 30j essai)
-        trial_end = datetime.utcnow() + timedelta(days=30)
-        new_pharmacy = Pharmacy(
-            name=session['reg_pharma_name'],
-            address=session['reg_pharma_address'],
-            license_number=session['reg_pharma_license'],
-            subscription_plan='Essai',
-            subscription_end_date=trial_end,
-            is_active=False # Verrouillé par défaut
-        )
-        db.session.add(new_pharmacy)
-        db.session.flush() 
+        try:
+            print(f"--- ETAPE 2 : Création de la pharmacie {pharma_name} ---")
+            trial_end = datetime.utcnow() + timedelta(days=30)
+            new_pharmacy = Pharmacy(
+                name=pharma_name,
+                address=session.get('reg_pharma_address'),
+                license_number=session.get('reg_pharma_license'),
+                subscription_plan='Essai',
+                subscription_end_date=trial_end,
+                is_active=False # Verrouillé par défaut
+            )
+            db.session.add(new_pharmacy)
+            db.session.flush() # Récupérer l'ID sans commiter tout de suite
+            print(f"ID Pharmacie généré : {new_pharmacy.id}")
+            
+            # 2. Créer l'Utilisateur Admin (Inactif par défaut)
+            print(f"--- ETAPE 2 : Création de l'utilisateur {email} ---")
+            new_user = User(
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                role='Admin',
+                pharmacy_id=new_pharmacy.id,
+                is_active=False, # Validation Super-Admin requise
+                can_view_pos=True,
+                can_view_inventory=True,
+                can_view_hr=True,
+                can_view_admin=True
+            )
+            new_user.set_password(password)
+            db.session.add(new_user)
+            
+            # 3. Finalisation en base
+            db.session.commit()
+            print("--- CRÉATION RÉUSSIE ---")
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"--- ERREUR CRITIQUE BASE DE DONNÉES : {str(e)} ---")
+            flash("Une erreur est survenue lors de l'enregistrement. Veuillez réessayer.", "danger")
+            return redirect(url_for('auth.register'))
         
-        # 2. Créer l'Utilisateur Admin (Inactif par défaut)
-        new_user = User(
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            role='Admin',
-            pharmacy_id=new_pharmacy.id,
-            is_active=False, # Validation Super-Admin requise
-            can_view_pos=True,
-            can_view_inventory=True,
-            can_view_hr=True,
-            can_view_admin=True
-        )
-        new_user.set_password(password)
-        db.session.add(new_user)
-        db.session.commit()
-        
-        # Alerte Email au Super-Admin
+        # 4. Alerte Email au Super-Admin
         try:
             from flask_mail import Message
             from app.extensions import mail
             msg = Message("Nouvelle demande d'inscription - PharmaCloud",
                           recipients=["syllamohamedmhd99@gmail.com"])
             msg.body = f"Bonjour,\n\nUne nouvelle pharmacie s'est inscrite sur la plateforme :\n" \
-                       f"Nom : {session.get('reg_pharma_name')}\n" \
+                       f"Nom : {pharma_name}\n" \
                        f"Admin : {first_name} {last_name} ({email})\n" \
                        f"Licence : {session.get('reg_pharma_license')}\n\n" \
                        f"Veuillez vous connecter à la console SaaS pour valider cet accès.\n\n" \
                        f"Cordialement,\nSystème PharmaCloud"
             mail.send(msg)
+            print("Email d'alerte envoyé au Super-Admin.")
         except Exception as e:
             print(f"--- ERREUR CRITIQUE SMTP ---")
             print(f"Détail : {str(e)}")
