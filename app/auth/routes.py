@@ -31,6 +31,11 @@ def login():
             return redirect(url_for('auth.login'))
              
         login_user(user, remember=remember)
+        
+        # Redirection directe pour le Super-Admin
+        if user.email == 'admin@pharma.com':
+            return redirect(url_for('super_admin'))
+            
         return redirect(url_for('index'))
         
     return render_template('auth/login.html')

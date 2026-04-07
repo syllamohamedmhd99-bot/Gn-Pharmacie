@@ -9,7 +9,7 @@
     <div class="d-flex gap-3">
         <div class="bg-white p-3 rounded-4 shadow-sm border-start border-4 border-success" style="min-width: 250px;">
             <div class="text-muted small fw-bold">CHIFFRE D'AFFAIRES GLOBAL</div>
-            <div class="h4 fw-bold mb-0 text-success">{{ "{:,.0f}".format(total_global_revenue).replace(',', ' ') }} GNF</div>
+            <div class="h4 fw-bold mb-0 text-success">{{ "{:,.0f}".format(total_global_revenue|default(0)).replace(',', ' ') }} GNF</div>
         </div>
     </div>
 </div>

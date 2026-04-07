@@ -125,25 +125,36 @@ def create_app(config_name='default'):
             flash("Accès réservé au Super-Administrateur.", "danger")
             return redirect(url_for('index'))
             
-        pharmacies = Pharmacy.query.all()
-        
-        # ANALYTICS SAAS
-        from sqlalchemy import func
-        total_global_revenue = db.session.query(func.sum(Sale.total_amount)).scalar() or 0
-        
-        # Répartition par pharmacie (Top Performance)
-        pharma_stats = []
-        for p in pharmacies:
-            rev = db.session.query(func.sum(Sale.total_amount)).filter_by(pharmacy_id=p.id).scalar() or 0
-            pharma_stats.append({
-                'name': p.name,
-                'revenue': rev
-            })
+        try:
+            pharmacies = Pharmacy.query.all()
             
-        return render_template('superadmin/dashboard.html', 
-                               pharmacies=pharmacies,
-                               total_global_revenue=total_global_revenue,
-                               pharma_stats=pharma_stats)
+            # ANALYTICS SAAS
+            from sqlalchemy import func
+            # On s'assure d'importer Sale ici par sécurité
+            from app.models import Sale
+            
+            total_global_revenue = db.session.query(func.sum(Sale.total_amount)).scalar() or 0
+            
+            # Répartition par pharmacie (Top Performance)
+            pharma_stats = []
+            for p in pharmacies:
+                rev = db.session.query(func.sum(Sale.total_amount)).filter_by(pharmacy_id=p.id).scalar() or 0
+                pharma_stats.append({
+                    'name': p.name,
+                    'revenue': rev
+                })
+            
+            return render_template('superadmin/dashboard.html', 
+                                   pharmacies=pharmacies,
+                                   total_global_revenue=total_global_revenue,
+                                   pharma_stats=pharma_stats)
+        except Exception as e:
+            flash(f"Erreur d'accès Dashboard : {str(e)}", "danger")
+            # Version de secours sans stats si ça échoue
+            return render_template('superadmin/dashboard.html', 
+                                   pharmacies=Pharmacy.query.all(),
+                                   total_global_revenue=0,
+                                   pharma_stats=[])
 
     @app.before_request
     def check_subscription():
