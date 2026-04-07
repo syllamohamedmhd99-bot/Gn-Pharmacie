@@ -31,6 +31,10 @@ def create_app(config_name='default'):
     app.register_blueprint(bp_pos, url_prefix='/pos')
     app.register_blueprint(bp_auth, url_prefix='/auth')
 
+    @app.route('/test')
+    def test_direct():
+        return "Test Réussi - Le serveur fonctionne !"
+
     # Global Dashboard route
     @app.route('/')
     def index():
