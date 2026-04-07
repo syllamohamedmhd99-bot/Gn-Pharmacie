@@ -40,13 +40,19 @@ def login():
         
     return render_template('auth/login.html')
 
-@bp_auth.route('/register', methods=['GET', 'POST'])
-def register():
     # Étape 1 : Informations sur la Pharmacie
     if request.method == 'POST':
-        session['reg_pharma_name'] = request.form.get('pharmacy_name')
+        name = request.form.get('pharmacy_name')
+        license_no = request.form.get('pharmacy_license')
+        
+        # SÉCURITÉ SAAS : Vérifier si la licence existe déjà
+        if Pharmacy.query.filter_by(license_number=license_no).first():
+            flash(f"La licence '{license_no}' est déjà enregistrée. Veuillez utiliser une autre licence ou contacter le support.", "warning")
+            return redirect(url_for('auth.register'))
+            
+        session['reg_pharma_name'] = name
         session['reg_pharma_address'] = request.form.get('pharmacy_address')
-        session['reg_pharma_license'] = request.form.get('pharmacy_license')
+        session['reg_pharma_license'] = license_no
         return redirect(url_for('auth.register_admin'))
         
     return render_template('auth/register_pharmacy.html')
@@ -113,7 +119,7 @@ def register_admin():
         except Exception as e:
             db.session.rollback()
             print(f"--- ERREUR CRITIQUE BASE DE DONNÉES : {str(e)} ---")
-            flash(f"Erreur d'enregistrement : {str(e)}", "danger")
+            flash("Une erreur est survenue lors de l'enregistrement de vos accès. Veuillez réessayer.", "danger")
             return redirect(url_for('auth.register'))
         
         # 4. Alerte Email au Super-Admin
