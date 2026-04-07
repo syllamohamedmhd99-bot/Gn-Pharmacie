@@ -2,9 +2,73 @@
 
 {% block title %}Super-Admin - PharmaCloud SaaS{% endblock %}
 
-{% block header %}Gestion Globale SaaS{% endblock %}
+{% block header %}Gestion Globale & Analytics SaaS{% endblock %}
 
 {% block content %}
+<!-- Cartes de Statistiques Globales -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+            <div class="card-body p-4 bg-primary text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-white-50 small fw-bold mb-1">REVENU GLOBAL SAAS</div>
+                        <h2 class="fw-800 mb-0">{{ "{:,.0f}".format(total_global_revenue).replace(',', ' ') }} GNF</h2>
+                    </div>
+                    <div class="bg-white p-2 rounded-3 text-primary">
+                        <i data-lucide="trending-up" size="24"></i>
+                    </div>
+                </div>
+                <div class="mt-3 x-small text-white-50">Cumul de toutes les transactions sur la plateforme.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-bold mb-1">CLIENTS ACTIFS</div>
+                    <h2 class="fw-800 mb-0">{{ pharmacies|selectattr('is_active', 'equalto', True)|list|length }} / {{ pharmacies|length }}</h2>
+                </div>
+                <div class="bg-success-subtle p-2 rounded-3 text-success">
+                    <i data-lucide="building" size="24"></i>
+                </div>
+            </div>
+            <div class="mt-3 x-small text-muted">Nombre de pharmacies inscrites et validées.</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-bold mb-1">PLATEFORME</div>
+                    <h2 class="fw-800 mb-0 text-success">STABLE</h2>
+                </div>
+                <div class="bg-info-subtle p-2 rounded-3 text-info">
+                    <i data-lucide="shield-check" size="24"></i>
+                </div>
+            </div>
+            <div class="mt-3 x-small text-muted">Serveur opérationnel en temps réel.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h6 class="fw-bold mb-4">Performance par Pharmacie (Revenus)</h6>
+            <canvas id="revenueChart" height="150"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <h6 class="fw-bold mb-4">Répartition des États</h6>
+            <canvas id="statusPieChart" height="250"></canvas>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
@@ -149,4 +213,65 @@
     .table thead th { border: none; letter-spacing: 0.05em; }
     .table tbody tr td { border-color: #f1f5f9; padding: 1.2rem 0.5rem; }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Données Backend injectées
+        const pharmaNames = [{% for s in pharma_stats %}"{{ s.name }}",{% endfor %}];
+        const pharmaRevenues = [{% for s in pharma_stats %}{{ s.revenue }},{% endfor %}];
+        
+        const activeCount = {{ pharmacies|selectattr('is_active', 'equalto', True)|list|length }};
+        const inactiveCount = {{ pharmacies|selectattr('is_active', 'equalto', False)|list|length }};
+
+        // 1. Graphique de Revenus (Bar)
+        const ctxRev = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctxRev, {
+            type: 'bar',
+            data: {
+                labels: pharmaNames,
+                datasets: [{
+                    label: 'Chiffre d\'Affaires (GNF)',
+                    data: pharmaRevenues,
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Graphique de Répartition Status (Pie)
+        const ctxStatus = document.getElementById('statusPieChart').getContext('2d');
+        new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: ['Actifs', 'En attente'],
+                datasets: [{
+                    data: [activeCount, inactiveCount],
+                    backgroundColor: ['#10b981', '#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

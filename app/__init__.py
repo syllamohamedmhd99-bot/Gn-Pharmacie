@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
 from config import config
 from app.extensions import db, migrate, login_manager
@@ -119,7 +119,50 @@ def create_app(config_name='default'):
             return redirect(url_for('index'))
             
         pharmacies = Pharmacy.query.all()
-        return render_template('superadmin/dashboard.html', pharmacies=pharmacies)
+        
+        # ANALYTICS SAAS
+        from sqlalchemy import func
+        total_global_revenue = db.session.query(func.sum(Sale.total_amount)).scalar() or 0
+        
+        # Répartition par pharmacie (Top Performance)
+        pharma_stats = []
+        for p in pharmacies:
+            rev = db.session.query(func.sum(Sale.total_amount)).filter_by(pharmacy_id=p.id).scalar() or 0
+            pharma_stats.append({
+                'name': p.name,
+                'revenue': rev
+            })
+            
+        return render_template('superadmin/dashboard.html', 
+                               pharmacies=pharmacies,
+                               total_global_revenue=total_global_revenue,
+                               pharma_stats=pharma_stats)
+
+    @app.before_request
+    def check_subscription():
+        # Ne s'applique qu'au utilisateurs connectés qui ne sont pas Super-Admin
+        if current_user.is_authenticated and current_user.email != 'admin@pharma.com':
+            # Ignorer pour les routes essentielles (logout, static, index, settings)
+            if request.endpoint in ['auth.logout', 'static', 'index', 'inventory.settings']:
+                return
+
+            pharma = current_user.pharmacy
+            if not pharma.is_active:
+                msg = "Votre compte pharmacie est inactif. Veuillez contacter le support."
+                if request.is_json or request.path.startswith('/api') or request.path.startswith('/pos/checkout'):
+                    return jsonify({"error": msg}), 403
+                flash(msg, "warning")
+                return redirect(url_for('index'))
+                
+            from datetime import datetime
+            if pharma.subscription_end_date and pharma.subscription_end_date < datetime.utcnow():
+                # On laisse l'accès aux paramètres pour qu'ils voient l'expiration
+                if request.endpoint != 'inventory.settings':
+                    msg = "Votre abonnement a expiré."
+                    if request.is_json or request.path.startswith('/api') or request.path.startswith('/pos/checkout'):
+                        return jsonify({"error": msg}), 403
+                    flash(msg, "danger")
+                    return redirect(url_for('inventory.settings'))
 
     @app.route('/superadmin/toggle_pharmacy/<int:id>', methods=['POST'])
     @login_required

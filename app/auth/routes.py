@@ -26,6 +26,10 @@ def login():
              flash('Votre compte est en attente de validation.', 'warning')
              return redirect(url_for('auth.login'))
              
+        if user.pharmacy and not user.pharmacy.is_active:
+            flash('Le service pour cette pharmacie est suspendu ou en attente.', 'danger')
+            return redirect(url_for('auth.login'))
+             
         login_user(user, remember=remember)
         return redirect(url_for('index'))
         
