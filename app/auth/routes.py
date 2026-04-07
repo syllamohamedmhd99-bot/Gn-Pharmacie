@@ -57,23 +57,24 @@ def register_admin():
             flash('Cet email est déjà utilisé.', 'danger')
             return redirect(url_for('auth.register_admin'))
             
-        # 1. Créer la Pharmacie
+        # 1. Créer la Pharmacie (Inactive par défaut)
         new_pharmacy = Pharmacy(
             name=session['reg_pharma_name'],
             address=session['reg_pharma_address'],
-            license_number=session['reg_pharma_license']
+            license_number=session['reg_pharma_license'],
+            is_active=False # Verrouillé par défaut
         )
         db.session.add(new_pharmacy)
         db.session.flush() 
         
-        # 2. Créer l'Utilisateur Admin
+        # 2. Créer l'Utilisateur Admin (Inactif par défaut)
         new_user = User(
             email=email,
             first_name=first_name,
             last_name=last_name,
             role='Admin',
             pharmacy_id=new_pharmacy.id,
-            is_active=True, 
+            is_active=False, # Validation Super-Admin requise
             can_view_pos=True,
             can_view_inventory=True,
             can_view_hr=True,
@@ -85,7 +86,7 @@ def register_admin():
         
         session.pop('reg_pharma_name', None)
         
-        flash('Compte Pharmacie créé avec succès ! Connectez-vous.', 'success')
+        flash('Demande d\'inscription envoyée ! Votre compte sera activé par le Super-Admin sous peu.', 'info')
         return redirect(url_for('auth.login'))
         
     return render_template('auth/register_admin.html')

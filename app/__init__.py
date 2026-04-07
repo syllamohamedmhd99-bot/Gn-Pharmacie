@@ -121,4 +121,22 @@ def create_app(config_name='default'):
         pharmacies = Pharmacy.query.all()
         return render_template('superadmin/dashboard.html', pharmacies=pharmacies)
 
+    @app.route('/superadmin/toggle_pharmacy/<int:id>', methods=['POST'])
+    @login_required
+    def toggle_pharmacy(id):
+        if current_user.email != 'admin@pharma.com':
+            return "Unauthorized", 401
+            
+        pharma = Pharmacy.query.get_or_404(id)
+        pharma.is_active = not pharma.is_active
+        
+        # Activer/Désactiver tous les utilisateurs de cette pharmacie également
+        for user in pharma.users:
+            user.is_active = pharma.is_active
+            
+        db.session.commit()
+        status = "activée" if pharma.is_active else "désactivée"
+        flash(f"La pharmacie {pharma.name} a été {status} avec succès.", "success")
+        return redirect(url_for('super_admin'))
+
     return app

@@ -26,10 +26,10 @@
                     <tbody>
                         {% if pharmacies %}
                         {% for pharma in pharmacies %}
-                        <tr>
+                        <tr class="{% if not pharma.is_active %}bg-warning-subtle{% endif %}">
                             <td class="ps-4">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="bg-info-subtle text-info p-2 rounded-3">
+                                    <div class="{% if pharma.is_active %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %} p-2 rounded-3">
                                         <i data-lucide="building" size="20"></i>
                                     </div>
                                     <div>
@@ -39,10 +39,26 @@
                                 </div>
                             </td>
                             <td><span class="text-muted small">{{ pharma.address or 'N/A' }}</span></td>
+                            <td>
+                                {% if pharma.is_active %}
+                                <span class="badge bg-success-subtle text-success rounded-pill px-3">Actif</span>
+                                {% else %}
+                                <span class="badge bg-danger text-white rounded-pill px-3">En attente</span>
+                                {% endif %}
+                            </td>
                             <td><span class="badge bg-secondary-subtle text-secondary rounded-pill py-1 px-2 fw-normal">{{ pharma.license_number }}</span></td>
-                            <td><span class="text-muted small">{{ pharma.name }}</span></td> <!-- Juste un placeholder ici -->
                             <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Détails</button>
+                                <form action="{{ url_for('toggle_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
+                                    {% if pharma.is_active %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                        Désactiver
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">
+                                        <i data-lucide="check-circle" size="14" class="me-1"></i> ACTIVER
+                                    </button>
+                                    {% endif %}
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
