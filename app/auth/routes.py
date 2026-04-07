@@ -40,6 +40,8 @@ def login():
         
     return render_template('auth/login.html')
 
+@bp_auth.route('/register', methods=['GET', 'POST'])
+def register():
     # Étape 1 : Informations sur la Pharmacie
     if request.method == 'POST':
         name = request.form.get('pharmacy_name', '').strip()
