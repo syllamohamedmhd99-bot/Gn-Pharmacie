@@ -1,5 +1,5 @@
 services:
-  # A Docker web service
+  # L'application Web Flask
   - type: web
     name: pharma-cloud-erp
     runtime: python
@@ -24,12 +24,12 @@ services:
           name: pharma-redis
           property: connectionString
 
-databases:
-  - name: pharma-db
-    plan: free
-
-services:
+  # Service Redis pour les sessions
   - type: redis
     name: pharma-redis
     plan: free
-    ipAllowList: [] # Only allow internal connections
+    ipAllowList: [] # Autorise uniquement les connexions internes
+
+databases:
+  - name: pharma-db
+    plan: free
