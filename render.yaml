@@ -4,7 +4,7 @@ services:
     name: pharma-cloud-erp
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: flask db upgrade && gunicorn run:app
+    startCommand: gunicorn run:app
     envVars:
       - key: FLASK_APP
         value: run.py

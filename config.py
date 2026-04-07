@@ -27,8 +27,8 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    # In production, we'd force HTTPS and Redis session caching
-    SESSION_TYPE = 'redis'
+    # In production, we'll use filesystem for now to avoid Redis timeouts on boot
+    SESSION_TYPE = 'filesystem'
     
 config = {
     'development': DevelopmentConfig,
