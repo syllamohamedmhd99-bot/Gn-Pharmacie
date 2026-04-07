@@ -13,13 +13,13 @@ def init_production_db():
         print("Tables vérifiées/créées.")
 
         # Vérifier l'admin
-        admin_email = 'admin@pharma.com'
+        admin_email = 'syllamohamedmhd99@gmail.com'
         admin = User.query.filter_by(email=admin_email).first()
         if not admin:
             print(f"Création de l'admin par défaut: {admin_email}")
             admin = User(
                 email=admin_email,
-                password_hash=generate_password_hash('admin123'),
+                password_hash=generate_password_hash('Dainahdj5@'),
                 first_name='Super',
                 last_name='Admin',
                 role='Admin',

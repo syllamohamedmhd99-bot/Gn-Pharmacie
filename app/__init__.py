@@ -37,7 +37,7 @@ def create_app(config_name='default'):
         if not current_user.is_authenticated:
             return render_template('marketing/landing.html')
             
-        if current_user.email == 'admin@pharma.com':
+        if current_user.email == 'syllamohamedmhd99@gmail.com':
             return redirect(url_for('super_admin'))
 
         # FILTRE SAAS: Statistiques de MA pharmacie
@@ -81,7 +81,7 @@ def create_app(config_name='default'):
             db.session.flush()
             
         # 2. Gestion de l'Admin SaaS
-        admin_email = 'admin@pharma.com'
+        admin_email = 'syllamohamedmhd99@gmail.com'
         admin = User.query.filter_by(email=admin_email).first()
         
         if not admin:
@@ -122,7 +122,7 @@ def create_app(config_name='default'):
     @login_required
     def super_admin():
         # Sécurité : Seul l'admin maître peut voir tout
-        if current_user.email != 'admin@pharma.com':
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
             flash("Accès réservé au Super-Administrateur.", "danger")
             return redirect(url_for('index'))
             
@@ -161,7 +161,7 @@ def create_app(config_name='default'):
     @app.before_request
     def check_subscription():
         # Ne s'applique qu'au utilisateurs connectés qui ne sont pas Super-Admin
-        if current_user.is_authenticated and current_user.email != 'admin@pharma.com':
+        if current_user.is_authenticated and current_user.email != 'syllamohamedmhd99@gmail.com':
             # Ignorer pour les routes essentielles (logout, static, index, settings)
             if request.endpoint in ['auth.logout', 'static', 'index', 'inventory.settings']:
                 return
@@ -187,7 +187,7 @@ def create_app(config_name='default'):
     @app.route('/superadmin/toggle_pharmacy/<int:id>', methods=['POST'])
     @login_required
     def toggle_pharmacy(id):
-        if current_user.email != 'admin@pharma.com':
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
             return "Unauthorized", 401
             
         pharma = Pharmacy.query.get_or_404(id)
@@ -205,7 +205,7 @@ def create_app(config_name='default'):
     @app.route('/superadmin/update_subscription/<int:id>', methods=['POST'])
     @login_required
     def update_subscription(id):
-        if current_user.email != 'admin@pharma.com':
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
             return "Unauthorized", 401
             
         pharma = Pharmacy.query.get_or_404(id)
@@ -255,7 +255,7 @@ def create_app(config_name='default'):
     @app.route('/superadmin/reports')
     @login_required
     def super_admin_reports():
-        if current_user.email != 'admin@pharma.com':
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
             return redirect(url_for('index'))
         
         from app.models import SubscriptionRecord
@@ -265,7 +265,7 @@ def create_app(config_name='default'):
     @app.route('/superadmin/export/payments')
     @login_required
     def export_payments():
-        if current_user.email != 'admin@pharma.com':
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
             return "Unauthorized", 401
         
         import csv

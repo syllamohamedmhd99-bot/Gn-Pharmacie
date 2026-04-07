@@ -33,7 +33,7 @@ def login():
         login_user(user, remember=remember)
         
         # Redirection directe pour le Super-Admin
-        if user.email == 'admin@pharma.com':
+        if user.email == 'syllamohamedmhd99@gmail.com':
             return redirect(url_for('super_admin'))
             
         return redirect(url_for('index'))
@@ -102,7 +102,7 @@ def register_admin():
             from flask_mail import Message
             from app.extensions import mail
             msg = Message("Nouvelle demande d'inscription - PharmaCloud",
-                          recipients=["admin@pharma.com"])
+                          recipients=["syllamohamedmhd99@gmail.com"])
             msg.body = f"Bonjour,\n\nUne nouvelle pharmacie s'est inscrite sur la plateforme :\n" \
                        f"Nom : {session.get('reg_pharma_name')}\n" \
                        f"Admin : {first_name} {last_name} ({email})\n" \
