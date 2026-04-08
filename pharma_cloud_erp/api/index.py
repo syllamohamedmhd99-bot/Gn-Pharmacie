@@ -1,10 +1,10 @@
-from app import create_app
 import os
+import sys
 
-# Create the app instance for Vercel Serverless Function
-# We use 'production' config for Vercel deployment
+# Ajoute le dossier parent au chemin de recherche pour trouver 'app'
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app import create_app
+
+# Point d'entrée pour Vercel (si Root Directory = pharma_cloud_erp)
 app = create_app('production')
-
-# Export app for Vercel
-# Vercel needs the 'app' variable to be available in this module
-# or the module itself to be named 'index.py' in /api/
