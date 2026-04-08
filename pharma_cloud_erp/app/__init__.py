@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, request, jso
 from flask_login import login_required
 from config import config
 from app.extensions import db, migrate, login_manager, mail
-from app.models import User, Medicine, Batch, Sale, SaleItem, Pharmacy
+from app.models import User, Medicine, Batch, Sale, SaleItem, Pharmacy, SubscriptionPlan
 from flask_login import current_user
 from datetime import datetime, timedelta
 
@@ -114,7 +114,18 @@ def create_app(config_name='default'):
             if not admin.pharmacy_id:
                 admin.pharmacy_id = default_pharma.id
         
-        # 3. Migration des Médicaments orphelins
+        # 3. Initialisation des Plans de Tarification si vides
+        if SubscriptionPlan.query.count() == 0:
+            plans = [
+                SubscriptionPlan(name='Mensuel', price=150000, duration_days=30, description='Accès complet pour 1 mois'),
+                SubscriptionPlan(name='Trimestriel', price=250000, duration_days=90, description='Accès complet pour 3 mois (Économique)'),
+                SubscriptionPlan(name='Semestriel', price=500000, duration_days=180, description='Accès complet pour 6 mois'),
+                SubscriptionPlan(name='Annuel', price=950000, duration_days=365, description='Le meilleur choix (12 mois)')
+            ]
+            for p in plans:
+                db.session.add(p)
+            
+        # 4. Migration des Médicaments orphelins
         orphaned_meds = Medicine.query.filter_by(pharmacy_id=None).all()
         for m in orphaned_meds:
             m.pharmacy_id = default_pharma.id
@@ -167,6 +178,7 @@ def create_app(config_name='default'):
                                    pharmacies=pharmacies,
                                    total_global_revenue=total_global_revenue,
                                    pharma_stats=pharma_stats,
+                                   plans=SubscriptionPlan.query.filter_by(is_active=True).all(),
                                    now=datetime.utcnow())
         except Exception as e:
             flash(f"Erreur d'accès Dashboard : {str(e)}", "danger")
@@ -223,42 +235,27 @@ def create_app(config_name='default'):
     @app.route('/superadmin/update_subscription/<int:id>', methods=['POST'])
     @login_required
     def update_subscription(id):
-        if current_user.email != 'syllamohamedmhd99@gmail.com':
+        if not current_user.is_super_admin:
             return "Unauthorized", 401
             
         pharma = Pharmacy.query.get_or_404(id)
-        plan = request.form.get('plan')
+        plan_id = request.form.get('plan_id')
+        plan = SubscriptionPlan.query.get(plan_id)
         
-        # Logique de prix et durée
-        days = 0
-        amount = 0
-        if plan == 'Mensuel': 
-            days = 30
-            amount = 150000
-        elif plan == 'Trimestriel': 
-            days = 90
-            amount = 250000
-        elif plan == 'Semestriel': 
-            days = 180
-            amount = 500000
-        elif plan == 'Annuel': 
-            days = 365
-            amount = 950000
-        
-        if days > 0:
+        if plan:
             # Enregistrement de la transaction
             from app.models import SubscriptionRecord
             record = SubscriptionRecord(
                 pharmacy_id=pharma.id,
-                plan_name=plan,
-                amount=amount
+                plan_name=plan.name,
+                amount=plan.price
             )
             db.session.add(record)
 
             # Mise à jour de la pharmacie
             start_date = pharma.subscription_end_date if pharma.subscription_end_date and pharma.subscription_end_date > datetime.utcnow() else datetime.utcnow()
-            pharma.subscription_end_date = start_date + timedelta(days=days)
-            pharma.subscription_plan = plan
+            pharma.subscription_end_date = start_date + timedelta(days=plan.duration_days)
+            pharma.subscription_plan = plan.name
             pharma.is_active = True
             
             for u in pharma.users:
@@ -266,7 +263,7 @@ def create_app(config_name='default'):
                     u.is_active = True
             
             db.session.commit()
-            flash(f"Abonnement {plan} activé pour {pharma.name}. Transaction enregistrée.", "success")
+            flash(f"Abonnement {plan.name} activé pour {pharma.name}.", "success")
         
         return redirect(url_for('super_admin'))
 
@@ -309,11 +306,45 @@ def create_app(config_name='default'):
     @app.route('/superadmin/subscriptions')
     @login_required
     def super_admin_subscriptions():
-        if current_user.email != 'syllamohamedmhd99@gmail.com':
+        if not current_user.is_super_admin:
             return redirect(url_for('index'))
             
         pharmacies = Pharmacy.query.order_by(Pharmacy.id.desc()).all()
-        return render_template('superadmin/subscriptions.html', pharmacies=pharmacies, now=datetime.utcnow())
+        plans = SubscriptionPlan.query.filter_by(is_active=True).all()
+        return render_template('superadmin/subscriptions.html', pharmacies=pharmacies, plans=plans, now=datetime.utcnow())
+
+    @app.route('/superadmin/plans')
+    @login_required
+    def super_admin_plans():
+        if not current_user.is_super_admin:
+            return redirect(url_for('index'))
+        plans = SubscriptionPlan.query.all()
+        return render_template('superadmin/plans.html', plans=plans)
+
+    @app.route('/superadmin/plans/add', methods=['POST'])
+    @login_required
+    def add_plan():
+        if not current_user.is_super_admin: return "Unauthorized", 401
+        
+        new_plan = SubscriptionPlan(
+            name=request.form.get('name'),
+            price=float(request.form.get('price')),
+            duration_days=int(request.form.get('duration'))
+        )
+        db.session.add(new_plan)
+        db.session.commit()
+        flash("Nouveau forfait ajouté avec succès.", "success")
+        return redirect(url_for('super_admin_plans'))
+
+    @app.route('/superadmin/plans/delete/<int:id>')
+    @login_required
+    def delete_plan(id):
+        if not current_user.is_super_admin: return "Unauthorized", 401
+        plan = SubscriptionPlan.query.get_or_404(id)
+        db.session.delete(plan)
+        db.session.commit()
+        flash("Forfait supprimé.", "warning")
+        return redirect(url_for('super_admin_plans'))
 
     @app.route('/superadmin/approve_pharmacy/<int:id>', methods=['POST'])
     @login_required

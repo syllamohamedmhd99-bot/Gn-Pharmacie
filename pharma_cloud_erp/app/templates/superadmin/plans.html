@@ -1,0 +1,83 @@
+{% extends "superadmin/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">Configuration des Forfaits</h2>
+        <p class="text-muted">Définissez vos offres commerciales et leurs tarifs.</p>
+    </div>
+    <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+        <i data-lucide="plus-circle" size="18" class="me-2"></i> Nouveau Forfait
+    </button>
+</div>
+
+<div class="row g-4">
+    {% for plan in plans %}
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+            <div class="card-header bg-dark text-white p-4 border-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0 text-white">{{ plan.name }}</h5>
+                    <a href="{{ url_for('delete_plan', id=plan.id) }}" class="text-danger opacity-75 hover-opacity-100" onclick="return confirm('Supprimer ce forfait ?')">
+                        <i data-lucide="trash-2" size="18"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="h2 fw-bold text-dark mb-1">{{ "{:,.0f}".format(plan.price).replace(',', ' ') }} <small class="h6 text-muted">GNF</small></div>
+                <div class="badge bg-success-subtle text-success mb-4 rounded-pill px-3">{{ plan.duration_days }} jours d'accès</div>
+                
+                <p class="text-muted small">{{ plan.description or 'Aucune description' }}</p>
+                
+                <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                    <span class="text-muted x-small">Statut : </span>
+                    {% if plan.is_active %}
+                    <span class="badge bg-success rounded-pill px-3">ACTIF</span>
+                    {% else %}
+                    <span class="badge bg-secondary rounded-pill px-3">INACTIF</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal Ajout -->
+<div class="modal fade" id="addPlanModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <form action="{{ url_for('add_plan') }}" method="POST">
+                <div class="modal-header border-0 p-4">
+                    <h5 class="fw-bold mb-0">Créer une offre</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">NOM DU FORFAIT</label>
+                        <input type="text" name="name" class="form-control rounded-3" placeholder="Ex: Premium Annuel" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">PRIX (GNF)</label>
+                            <input type="number" name="price" class="form-control rounded-3" placeholder="100000" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">DURÉE (JOURS)</label>
+                            <input type="number" name="duration" class="form-control rounded-3" placeholder="30" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 fw-bold">ENREGISTRER LE PLAN</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small { font-size: 0.75rem; }
+    .hover-opacity-100:hover { opacity: 1 !important; }
+</style>
+{% endblock %}

@@ -135,46 +135,18 @@
                                     <form action="{{ url_for('update_subscription', id=pharma.id) }}" method="POST">
                                         <div class="modal-body p-4">
                                             <div class="list-group gap-2">
+                                                {% for p in plans %}
                                                 <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer">
                                                     <div class="d-flex align-items-center gap-3">
-                                                        <input type="radio" name="plan" value="Mensuel" required>
+                                                        <input type="radio" name="plan_id" value="{{ p.id }}" {% if loop.first %}required{% endif %}>
                                                         <div>
-                                                            <div class="fw-bold">1 Mois</div>
-                                                            <div class="text-muted x-small">Standard</div>
+                                                            <div class="fw-bold">{{ p.name }}</div>
+                                                            <div class="text-muted x-small">{{ p.duration_days }} jours</div>
                                                         </div>
                                                     </div>
-                                                    <span class="badge bg-success-subtle text-success">150k GNF</span>
+                                                    <span class="badge bg-success-subtle text-success">{{ "{:,.0f}".format(p.price).replace(',', ' ') }} GNF</span>
                                                 </label>
-                                                <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <input type="radio" name="plan" value="Trimestriel">
-                                                        <div>
-                                                            <div class="fw-bold">3 Mois</div>
-                                                            <div class="text-muted x-small">Économique</div>
-                                                        </div>
-                                                    </div>
-                                                    <span class="badge bg-success-subtle text-success">250k GNF</span>
-                                                </label>
-                                                <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <input type="radio" name="plan" value="Semestriel">
-                                                        <div>
-                                                            <div class="fw-bold">6 Mois</div>
-                                                            <div class="text-muted x-small">Sérénité</div>
-                                                        </div>
-                                                    </div>
-                                                    <span class="badge bg-success-subtle text-success">500k GNF</span>
-                                                </label>
-                                                <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <input type="radio" name="plan" value="Annuel">
-                                                        <div>
-                                                            <div class="fw-bold">1 An</div>
-                                                            <div class="text-muted x-small">Le meilleur choix</div>
-                                                        </div>
-                                                    </div>
-                                                    <span class="badge bg-success-subtle text-success">950k GNF</span>
-                                                </label>
+                                                {% endfor %}
                                             </div>
                                         </div>
                                         <div class="modal-footer border-0 p-4 pt-0">

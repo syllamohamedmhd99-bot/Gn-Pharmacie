@@ -105,6 +105,9 @@
             <a href="{{ url_for('super_admin_subscriptions') }}" class="nav-admin-link {% if request.endpoint == 'super_admin_subscriptions' %}active{% endif %}">
                 <i data-lucide="credit-card"></i> Abonnements
             </a>
+            <a href="{{ url_for('super_admin_plans') }}" class="nav-admin-link {% if request.endpoint == 'super_admin_plans' %}active{% endif %}">
+                <i data-lucide="settings"></i> Gestion des Offres
+            </a>
             <div class="mt-5 pt-5">
                 <a href="{{ url_for('auth.logout') }}" class="nav-admin-link text-danger">
                     <i data-lucide="log-out"></i> Déconnexion

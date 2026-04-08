@@ -192,6 +192,19 @@ class SalaryAdvance(db.Model):
     status = db.Column(db.String(50), default='Pending') # Pending (En cours), Deducted (Déduite du salaire)
 
     user = db.relationship('User', backref='advances', lazy=True)
+class SubscriptionPlan(db.Model):
+    __tablename__ = 'subscription_plans'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True) # Mensuel, Annuel...
+    price = db.Column(db.Float, nullable=False, default=0.0)
+    duration_days = db.Column(db.Integer, nullable=False, default=30)
+    description = db.Column(db.String(255), nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Plan {self.name} - {self.price} GNF>'
+
 class SubscriptionRecord(db.Model):
     __tablename__ = 'subscription_records'
     id = db.Column(db.Integer, primary_key=True)
