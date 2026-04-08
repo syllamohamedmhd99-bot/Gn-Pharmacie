@@ -55,13 +55,16 @@ def seed():
                 first_name="Mohamed",
                 last_name="Sylla"
             )
-            admin.set_password("admin123") # Changement requis au premier login
-            db.session.add(admin)
-            print(f"[4/4] Compte Super-Admin créé ({admin_email}).")
+            print(f"[4/4] Création du compte Super-Admin ({admin_email})...")
         else:
             admin.is_super_admin = True
             admin.is_active = True
-            print(f"[4/4] Compte Admin mis à jour ({admin_email}).")
+            print(f"[4/4] Mise à jour et réinitialisation du compte Super-Admin ({admin_email})...")
+        
+        # On force le mot de passe dans tous les cas pour garantir l'accès
+        admin.set_password("admin123")
+        if not admin.id:
+            db.session.add(admin)
         
         db.session.commit()
 
