@@ -155,10 +155,14 @@ def register_admin():
         session.pop('reg_pharma_address', None)
         session.pop('reg_pharma_license', None)
         
-        flash('Demande d\'inscription envoyée ! Votre compte sera activé par le Super-Admin sous peu.', 'info')
-        return redirect(url_for('auth.login'))
+        flash('Demande d\'inscription envoyée !', 'success')
+        return redirect(url_for('auth.registration_pending'))
         
     return render_template('auth/register_admin.html')
+
+@bp_auth.route('/registration-pending')
+def registration_pending():
+    return render_template('auth/pending_activation.html')
 
 @bp_auth.route('/logout')
 @login_required

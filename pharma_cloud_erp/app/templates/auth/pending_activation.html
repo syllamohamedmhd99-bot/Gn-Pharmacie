@@ -1,0 +1,62 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Attente d'Activation - PharmaCloud{% endblock %}
+
+{% block content %}
+<div class="auth-card shadow-lg p-5 bg-white rounded-4 border-0 text-center">
+    <div class="mb-4">
+        <div class="bg-success bg-opacity-10 p-4 rounded-circle d-inline-block text-success mb-3 shadow-sm">
+            <i data-lucide="check-circle" style="width: 64px; height: 64px;"></i>
+        </div>
+        <h2 class="fw-bold text-dark">Demande Envoyée !</h2>
+        <p class="text-muted">Votre pharmacie a été enregistrée avec succès.</p>
+    </div>
+
+    <div class="alert alert-info border-0 rounded-4 p-4 text-start mb-4 shadow-sm" style="background-color: #f0f7ff;">
+        <h5 class="fw-bold text-primary mb-3">
+            <i data-lucide="info" class="me-2" size="20"></i> Instructions d'Activation
+        </h5>
+        <div class="bg-white p-3 rounded-3 border border-primary border-opacity-10 mb-3">
+            <div class="text-muted small fw-bold mb-1 text-uppercase">Méthode de Paiement</div>
+            <div class="h5 fw-bold text-dark mb-0">Orange Money uniquement</div>
+        </div>
+        
+        <div class="bg-white p-3 rounded-3 border border-primary border-opacity-10 mb-3">
+            <div class="text-muted small fw-bold mb-1 text-uppercase">Numéro de Dépôt</div>
+            <div class="h4 fw-bold text-primary mb-0">+224 610 66 66 59</div>
+        </div>
+
+        <div class="bg-white p-3 rounded-3 border border-primary border-opacity-10">
+            <div class="text-muted small fw-bold mb-1 text-uppercase">Titulaire du Compte</div>
+            <div class="h5 fw-bold text-dark mb-0">Mohamed SEKOU SYLLA</div>
+        </div>
+    </div>
+
+    <p class="text-muted small mb-4">
+        Une fois le dépôt effectué, cliquez sur le bouton ci-dessous pour nous envoyer la capture d'écran sur WhatsApp. 
+        Votre compte sera activé dans les 15 minutes.
+    </p>
+
+    <div class="d-grid gap-3">
+        <a href="https://wa.me/224610666659?text=Bonjour,%20je%20viens%20de%20m'inscrire%20sur%20PharmaCloud.%20Voici%20ma%20preuve%20de%20dépôt." 
+           target="_blank" class="btn btn-success py-3 fw-bold rounded-pill shadow-sm d-flex align-items-center justify-content-center">
+            <i data-lucide="message-circle" class="me-2"></i> ENVOYER LA PREUVE (WHATSAPP)
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-link text-muted text-decoration-none small">
+            Retour à la page de connexion
+        </a>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        max-width: 550px;
+        width: 100%;
+        animation: fadeIn 0.8s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+</style>
+{% endblock %}
