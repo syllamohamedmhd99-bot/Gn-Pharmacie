@@ -57,7 +57,7 @@ def create_app(config_name='default'):
 
     @app.route('/test')
     def test_direct():
-        return "Test Réussi - Le serveur fonctionne !"
+        return "Test Réussi [SYNC OK] - Le serveur fonctionne !"
 
     # Global Dashboard route
     @app.route('/')
