@@ -346,7 +346,8 @@ def create_app(config_name='default'):
         new_plan = SubscriptionPlan(
             name=request.form.get('name'),
             price=float(request.form.get('price')),
-            duration_days=int(request.form.get('duration'))
+            duration_days=int(request.form.get('duration')),
+            description=request.form.get('description')
         )
         db.session.add(new_plan)
         db.session.commit()
