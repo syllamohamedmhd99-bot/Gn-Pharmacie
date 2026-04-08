@@ -101,8 +101,8 @@ def create_app(config_name='default'):
             db.create_all()
             diagnostic_log.append("Tables OK.")
 
-            # Migrations SQL Manuelles (Sécurisées pour SQLite/Postgres)
-            diagnostic_log.append("Exécution des migrations de schéma...")
+            # 3. Migration SQL Manuelle des colonnes (Sécurisée pour SQLite/Postgres)
+            diagnostic_log.append("Migration des colonnes...")
             cols_to_add = [
                 "ALTER TABLE users ADD COLUMN is_super_admin BOOLEAN DEFAULT FALSE",
                 "ALTER TABLE sales ADD COLUMN customer_id INTEGER",
@@ -116,72 +116,64 @@ def create_app(config_name='default'):
                     db.session.commit()
                 except Exception:
                     db.session.rollback()
-                    # On ignore si la colonne existe déjà (cas courant sur SQLite)
             
-            diagnostic_log.append("Migrations terminées.")
-            
-            # 3. Initialisation des Plans de Tarification si vides
-            if SubscriptionPlan.query.count() == 0:
-                diagnostic_log.append("Initialisation des plans...")
-                plans = [
-                    SubscriptionPlan(name='Mensuel', price=150000, duration_days=30, description='Accès complet pour 1 mois'),
-                    SubscriptionPlan(name='Trimestriel', price=250000, duration_days=90, description='Accès complet pour 3 mois (Économique)'),
-                    SubscriptionPlan(name='Semestriel', price=500000, duration_days=180, description='Accès complet pour 6 mois'),
-                    SubscriptionPlan(name='Annuel', price=950000, duration_days=365, description='Le meilleur choix (12 mois)')
+            # 4. Initialisation des Plans (SQL BRUT)
+            res = db.session.execute(text("SELECT COUNT(*) FROM subscription_plans"))
+            if res.scalar() == 0:
+                plans_sql = [
+                    "INSERT INTO subscription_plans (name, price, duration_days, description) VALUES ('Mensuel', 150000, 30, 'Accès complet 1 mois')",
+                    "INSERT INTO subscription_plans (name, price, duration_days, description) VALUES ('Trimestriel', 250000, 90, 'Accès complet 3 mois')",
+                    "INSERT INTO subscription_plans (name, price, duration_days, description) VALUES ('Semestriel', 500000, 180, 'Accès complet 6 mois')",
+                    "INSERT INTO subscription_plans (name, price, duration_days, description) VALUES ('Annuel', 950000, 365, 'Accès complet 1 an')"
                 ]
-                for p in plans:
-                    db.session.add(p)
+                for p_sql in plans_sql:
+                    db.session.execute(text(p_sql))
                 db.session.commit()
-                diagnostic_log.append("Plans créés.")
+                diagnostic_log.append("Plans de tarification initialisés.")
 
-            # 4. Création de la Pharmacie par défaut
-            default_pharma = Pharmacy.query.filter_by(name='Pharmacie de Démonstration').first()
-            if not default_pharma:
-                default_pharma = Pharmacy(
-                    name='Pharmacie de Démonstration', 
-                    address='Conakry, Guinée', 
-                    license_number='DEMO-001',
-                    is_active=True # Force l'activation
-                )
-                db.session.add(default_pharma)
-                db.session.flush()
-            else:
-                default_pharma.is_active = True # Sécurité activation
-
-            # 5. Gestion de l'Admin SaaS
+            # 5. Création Admin (SQL BRUT pour éviter crash mapper)
             admin_email = 'syllamohamedmhd99@gmail.com'
-            admin = User.query.filter_by(email=admin_email).first()
-            if not admin:
-                admin = User(
-                    email=admin_email, 
-                    role='Admin', 
-                    pharmacy_id=default_pharma.id, 
-                    is_active=True, 
-                    is_super_admin=True,
-                    can_view_pos=True,
-                    can_view_inventory=True,
-                    can_view_hr=True,
-                    can_view_admin=True
-                )
-            else:
-                admin.is_super_admin = True
-                admin.is_active = True # Force activation
-                if not admin.pharmacy_id: admin.pharmacy_id = default_pharma.id
+            res_admin = db.session.execute(text("SELECT id FROM users WHERE email = :email"), {"email": admin_email})
+            admin_id = res_admin.scalar()
             
-            admin.set_password('admin123') # Reset temporaire pour débloquer
-            db.session.add(admin)
+            if not admin_id:
+                # Création de la pharmacie par défaut si besoin
+                res_pharma = db.session.execute(text("SELECT id FROM pharmacies LIMIT 1"))
+                pharma_id = res_pharma.scalar()
+                if not pharma_id:
+                    db.session.execute(text("INSERT INTO pharmacies (name, is_active) VALUES ('Ma Pharmacie', 1)"))
+                    db.session.commit()
+                    pharma_id = db.session.execute(text("SELECT id FROM pharmacies LIMIT 1")).scalar()
+                
+                # Insert Admin avec password 'admin123' haché (simulé pour le seed, l'admin pourra reset)
+                # Note: On utilise un hash générique ou on laisse le set_password faire plus tard
+                pass_hash = "pbkdf2:sha256:600000$p6G6g2... (hash-placeholder)" 
+                db.session.execute(text("""
+                    INSERT INTO users (email, password_hash, role, pharmacy_id, is_active, is_super_admin, can_view_pos, can_view_inventory, can_view_hr, can_view_admin)
+                    VALUES (:email, :pwd, 'Admin', :pid, 1, 1, 1, 1, 1, 1)
+                """), {"email": admin_email, "pwd": pass_hash, "pid": pharma_id})
+                db.session.commit()
+                diagnostic_log.append("Compte Admin créé.")
+            else:
+                db.session.execute(text("UPDATE users SET is_super_admin = 1, is_active = 1 WHERE email = :email"), {"email": admin_email})
+                db.session.commit()
+                diagnostic_log.append("Compte Admin mis à jour.")
             
             # 6. Échantillon de Données ERP (CRM & Tâches)
             from app.models import Customer, Task
-            if Customer.query.filter_by(pharmacy_id=default_pharma.id).count() == 0:
-                c1 = Customer(name="Moussa Diallo", phone="620112233", loyalty_points=150, pharmacy_id=default_pharma.id)
-                c2 = Customer(name="Aissatou Barry", phone="621445566", loyalty_points=50, pharmacy_id=default_pharma.id)
+            res_p = db.session.execute(text("SELECT id FROM pharmacies LIMIT 1"))
+            pharma_id = res_p.scalar()
+            
+            if pharma_id and Customer.query.filter_by(pharmacy_id=pharma_id).count() == 0:
+                c1 = Customer(name="Moussa Diallo", phone="620112233", loyalty_points=150, pharmacy_id=pharma_id)
+                c2 = Customer(name="Aissatou Barry", phone="621445566", loyalty_points=50, pharmacy_id=pharma_id)
                 db.session.add_all([c1, c2])
             
-            if Task.query.filter_by(pharmacy_id=default_pharma.id).count() == 0:
+            if pharma_id and Task.query.filter_by(pharmacy_id=pharma_id).count() == 0:
+                # On utilise l'admin_id récupéré au point 5
                 t1 = Task(title="Inventaire Rayon Alpha", description="Vérifier les dates d'expiration au rayon A", 
                           priority="Haute", status="A faire", 
-                          created_by_id=admin.id, pharmacy_id=default_pharma.id)
+                          created_by_id=admin_id, pharmacy_id=pharma_id)
                 db.session.add(t1)
 
             db.session.commit()
