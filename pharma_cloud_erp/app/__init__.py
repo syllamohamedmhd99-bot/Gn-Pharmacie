@@ -211,21 +211,21 @@ def create_app(config_name='default'):
             monthly_saas_revenue = db.session.query(func.sum(SubscriptionRecord.amount))\
                 .filter(SubscriptionRecord.timestamp >= first_day_month).scalar() or 0
 
-            # Optimisation: Répartition par pharmacie (Top Performance)
+            # 4. Répartition des Recettes SaaS par pharmacie (Pour le graphique GNF)
             pharma_stats = []
-            revenue_by_pharma = db.session.query(
-                Sale.pharmacy_id, 
-                func.sum(Sale.total_amount).label('total')
-            ).group_by(Sale.pharmacy_id).all()
+            saas_revenue_by_pharma = db.session.query(
+                SubscriptionRecord.pharmacy_id, 
+                func.sum(SubscriptionRecord.amount).label('total')
+            ).group_by(SubscriptionRecord.pharmacy_id).all()
             
-            revenue_map = {r.pharmacy_id: r.total for r in revenue_by_pharma}
+            saas_map = {r.pharmacy_id: r.total for r in saas_revenue_by_pharma}
             
             for p in pharmacies:
                 pharma_stats.append({
                     'id': p.id,
                     'name': p.name,
                     'is_active': p.is_active,
-                    'revenue': revenue_map.get(p.id, 0)
+                    'saas_revenue': saas_map.get(p.id, 0)
                 })
             
             return render_template('superadmin/dashboard.html', 
