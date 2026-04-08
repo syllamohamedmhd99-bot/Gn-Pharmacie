@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
+from sqlalchemy import text
 from config import config
 from app.extensions import db, migrate, login_manager, mail
 from app.models import User, Medicine, Batch, Sale, SaleItem, Pharmacy, SubscriptionPlan
@@ -75,6 +76,14 @@ def create_app(config_name='default'):
     # Route SaaS: Initialisation / Migration
     @app.route('/seed')
     def seed():
+        try:
+            # 0. Migration SQL Manuelle (ALTER TABLE) pour PostgreSQL
+            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE;"))
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Migration error (ignored if already exists): {e}")
+
         db.create_all()
         
         # 1. Création de la Pharmacie par défaut si nécessaire
