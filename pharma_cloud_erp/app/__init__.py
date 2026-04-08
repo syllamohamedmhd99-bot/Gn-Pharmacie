@@ -279,6 +279,23 @@ def create_app(config_name='default'):
                 if u.role == 'Admin':
                     u.is_active = True
             
+            # --- NOTIFICATION EMAIL AU SUPER ADMIN ---
+            try:
+                from flask_mail import Message
+                from app.extensions import mail
+                msg = Message(f"💸 Nouveau Paiement : {pharma.name}",
+                              recipients=["syllamohamedmhd99@gmail.com"])
+                msg.body = f"Bonjour Mohamed,\n\nUne nouvelle transaction a été validée :\n\n" \
+                           f"Pharmacie : {pharma.name}\n" \
+                           f"Forfait : {plan.name}\n" \
+                           f"Montant : {plan.price:,.0f} GNF\n" \
+                           f"Nouvelle expiration : {pharma.subscription_end_date.strftime('%d/%m/%Y')}\n\n" \
+                           f"L'accès a été prolongé automatiquement.\n\n" \
+                           f"Cordialement,\nPharmaCloud SaaS"
+                mail.send(msg)
+            except Exception as e:
+                print(f"Erreur notification email: {e}")
+
             db.session.commit()
             flash(f"Abonnement {plan.name} activé pour {pharma.name}.", "success")
         
