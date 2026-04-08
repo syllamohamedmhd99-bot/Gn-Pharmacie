@@ -15,7 +15,8 @@ def dashboard():
     medicines = Medicine.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
     batches = Batch.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(Batch.expiry_date.asc()).all()
     
-    total_stock_value = sum(b.quantity * b.medicine.default_price for b in batches)
+    # Calcul sécurisé de la valeur du stock (ignore les lots orphelins)
+    total_stock_value = sum(b.quantity * (b.medicine.default_price or 0) for b in batches if b.medicine)
     
     from datetime import date, timedelta
     today_date = date.today()

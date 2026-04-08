@@ -127,7 +127,7 @@
                             near_date and not is_expired %} <tr
                             class="{% if is_expired %}table-danger opacity-75{% endif %}">
                             <td>
-                                <div class="fw-bold">{{ batch.medicine.name }}</div>
+                                <div class="fw-bold">{{ batch.medicine.name if batch.medicine else 'Produit Inconnu' }}</div>
                             </td>
                             <td><code>{{ batch.batch_number }}</code></td>
                             <td>
