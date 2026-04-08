@@ -11,24 +11,13 @@ class Config:
     # SQLALCHEMY Configuration
     db_url = os.environ.get('DATABASE_URL')
     if db_url and db_url.strip():
-        from urllib.parse import urlparse, urlunparse
-        
-        # Nettoyage profond de l'URL
+        # Transformation postgres -> postgresql (requis par SQLAlchemy)
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
             
-        parsed = urlparse(db_url)
-        # On reconstruit l'URL sans les paramètres de requête (query) qui font planter psycopg2
-        db_url = urlunparse((
-            parsed.scheme,
-            parsed.netloc,
-            parsed.path,
-            parsed.params,
-            '', # On vide la query
-            parsed.fragment
-        ))
-            
-        SQLALCHEMY_DATABASE_URI = db_url
+        # Nettoyage ultra-robuste des query params (?pgbouncer=true...)
+        # On coupe juste après le '?' si il existe, sans toucher au reste de l'URL
+        SQLALCHEMY_DATABASE_URI = db_url.split('?')[0]
     else:
         SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
     
