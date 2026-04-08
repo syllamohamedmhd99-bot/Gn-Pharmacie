@@ -1,9 +1,0 @@
-{
-  "framework": "flask",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
-    }
-  ]
-}
