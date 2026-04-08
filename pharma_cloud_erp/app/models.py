@@ -32,7 +32,7 @@ class Pharmacy(db.Model):
     medicines = db.relationship('Medicine', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
     sales = db.relationship('Sale', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
     suppliers = db.relationship('Supplier', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
-    payments = db.relationship('SubscriptionRecord', backref='pharma', lazy=True, cascade="all, delete-orphan")
+    payments = db.relationship('SubscriptionRecord', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
     
     # Nouveaux Modules
     customers = db.relationship('Customer', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
@@ -220,7 +220,7 @@ class SubscriptionRecord(db.Model):
     amount = db.Column(db.Float, default=0.0)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-    pharmacy = db.relationship('Pharmacy', backref='payments', lazy=True)
+    # La relation avec Pharmacy est gérée par le backref dans la classe Pharmacy
 
     def __repr__(self):
         return f'<SubscriptionRecord {self.plan_name} for Pharma {self.pharmacy_id}>'
