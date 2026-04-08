@@ -1,10 +1,9 @@
 services:
-  # L'application Web Flask
   - type: web
     name: pharma-cloud-erp
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: (python -m flask db upgrade || true) && (python -m flask seed || true) && gunicorn -b 0.0.0.0:$PORT --timeout 120 run:app
+    startCommand: (python -m flask db upgrade || true) && (python -m flask seed || true) && gunicorn -b 0.0.0.0:$PORT --timeout 120 index:app
     envVars:
       - key: FLASK_APP
         value: manage.py
