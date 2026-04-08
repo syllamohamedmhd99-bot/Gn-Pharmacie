@@ -306,3 +306,30 @@ class LeaveRequest(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='leave_requests')
+
+class SystemLog(db.Model):
+    __tablename__ = 'system_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True)
+    action = db.Column(db.String(100), nullable=False) # Login, Delete, Payment, etc.
+    details = db.Column(db.Text, nullable=True)
+    ip_address = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='logs')
+    pharmacy = db.relationship('Pharmacy', backref='logs')
+
+class SupportTicket(db.Model):
+    __tablename__ = 'support_tickets'
+    id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    priority = db.Column(db.String(20), default='Normal') # Basse, Normal, Haute
+    status = db.Column(db.String(20), default='Open') # Open, Pending, Closed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    pharmacy = db.relationship('Pharmacy', backref='tickets')
+    user = db.relationship('User', backref='tickets')

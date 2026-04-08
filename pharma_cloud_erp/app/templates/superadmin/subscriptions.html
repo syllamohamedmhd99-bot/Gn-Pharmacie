@@ -37,7 +37,7 @@
                                 <td><code class="text-primary">{{ pharma.license_number }}</code></td>
                                 <td>{{ pharma.users[0].hire_date.strftime('%d/%m/%Y') if (pharma.users and pharma.users|length > 0) else 'Récemment' }}</td>
                                 <td class="text-end pe-4">
-                                    <form action="{{ url_for('approve_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
+                                    <form action="{{ url_for('superadmin.approve_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
                                         <button type="submit" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold">
                                             Valider & Activer
                                         </button>
@@ -104,7 +104,7 @@
                         <div class="modal fade" id="renewModal{{ pharma.id }}" tabindex="-1">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content rounded-4 border-0 shadow-lg">
-                                    <form action="{{ url_for('update_subscription', id=pharma.id) }}" method="POST">
+                                    <form action="{{ url_for('superadmin.update_subscription', id=pharma.id) }}" method="POST">
                                         <div class="modal-header border-0 p-4">
                                             <h5 class="fw-bold mb-0">Renouveler l'abonnement</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

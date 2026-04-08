@@ -1,13 +1,25 @@
 from flask import render_template, redirect, url_for, flash, request, make_response, jsonify
 from flask_login import login_required, current_user
 from app.superadmin import bp_superadmin
-from app.models import User, Pharmacy, SubscriptionPlan, SubscriptionRecord, Sale
+from app.models import User, Pharmacy, SubscriptionPlan, SubscriptionRecord, Sale, SystemLog, SupportTicket
 from app.extensions import db, mail
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import csv
 from io import StringIO
 from flask_mail import Message
+
+def log_action(action, details=None, pharmacy_id=None):
+    """Enregistre une action dans les logs système."""
+    log = SystemLog(
+        user_id=current_user.id if current_user.is_authenticated else None,
+        pharmacy_id=pharmacy_id or (current_user.pharmacy_id if current_user.is_authenticated else None),
+        action=action,
+        details=details,
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
+    db.session.commit()
 
 def check_super_admin():
     if not current_user.is_authenticated or not current_user.is_super_admin:
@@ -84,6 +96,7 @@ def toggle_pharmacy(id):
         user.is_active = pharma.is_active
         
     db.session.commit()
+    log_action("Toggle Pharmacy", f"Pharma {pharma.name} status set to {pharma.is_active}", pharma.id)
     status = "activée" if pharma.is_active else "désactivée"
     flash(f"La pharmacie {pharma.name} a été {status} avec succès.", "success")
     return redirect(url_for('superadmin.dashboard'))
@@ -116,6 +129,8 @@ def update_subscription(id):
         for u in pharma.users:
             if u.role == 'Admin':
                 u.is_active = True
+        
+        log_action("Subscription Update", f"Pharma {pharma.name} set to {plan.name} at {plan.price} GNF", pharma.id)
         
         # --- NOTIFICATION EMAIL AU SUPER ADMIN ---
         try:
@@ -204,6 +219,7 @@ def add_plan():
     )
     db.session.add(new_plan)
     db.session.commit()
+    log_action("Add Plan", f"New plan {new_plan.name} created at {new_plan.price} GNF")
     flash("Nouveau forfait ajouté avec succès.", "success")
     return redirect(url_for('superadmin.plans'))
 
@@ -213,8 +229,10 @@ def delete_plan(id):
     if not check_super_admin():
         return "Unauthorized", 401
     plan = SubscriptionPlan.query.get_or_404(id)
+    name = plan.name
     db.session.delete(plan)
     db.session.commit()
+    log_action("Delete Plan", f"Plan {name} deleted")
     flash("Forfait supprimé.", "warning")
     return redirect(url_for('superadmin.plans'))
 
@@ -232,6 +250,7 @@ def approve_pharmacy(id):
         user.is_active = True
         
     db.session.commit()
+    log_action("Approve Pharmacy", f"Pharma {pharma.name} approved and activated", pharma.id)
     flash(f"La pharmacie {pharma.name} a été validée avec succès !", "success")
     return redirect(url_for('superadmin.subscriptions'))
 
@@ -245,6 +264,7 @@ def delete_pharmacy(id):
     name = pharma.name
     
     try:
+        log_action("Delete Pharmacy", f"PERMANENT DELETE: Pharmacy {name}", pharma.id)
         db.session.delete(pharma)
         db.session.commit()
         flash(f"La pharmacie {name} et toutes ses données ont été supprimées.", "warning")
@@ -253,3 +273,57 @@ def delete_pharmacy(id):
         flash(f"Erreur lors de la suppression : {str(e)}", "danger")
         
     return redirect(url_for('superadmin.dashboard'))
+
+@bp_superadmin.route('/users')
+@login_required
+def users():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+    
+    all_users = User.query.order_by(User.id.desc()).all()
+    pharmacies = Pharmacy.query.all()
+    return render_template('superadmin/users.html', users=all_users, pharmacies=pharmacies)
+
+@bp_superadmin.route('/logs')
+@login_required
+def logs():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+    
+    all_logs = SystemLog.query.order_by(SystemLog.timestamp.desc()).limit(500).all()
+    return render_template('superadmin/logs.html', logs=all_logs)
+
+@bp_superadmin.route('/support')
+@login_required
+def support():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+    
+    tickets = SupportTicket.query.order_by(SupportTicket.created_at.desc()).all()
+    return render_template('superadmin/support.html', tickets=tickets)
+
+@bp_superadmin.route('/settings')
+@login_required
+def settings():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+    
+    # Paramètres fictifs pour le moment (SaaS Config)
+    config_vars = {
+        'MAIL_SERVER': 'smtp.gmail.com',
+        'MAINTENANCE_MODE': 'OFF',
+        'GLOBAL_ALERT': ''
+    }
+    return render_template('superadmin/settings.html', config=config_vars)
+
+@bp_superadmin.route('/user/toggle/<int:id>')
+@login_required
+def toggle_user(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+    user = User.query.get_or_404(id)
+    user.is_active = not user.is_active
+    db.session.commit()
+    log_action("Toggle User", f"User {user.email} status set to {user.is_active}")
+    flash(f"Statut de {user.email} mis à jour.", "info")
+    return redirect(url_for('superadmin.users'))

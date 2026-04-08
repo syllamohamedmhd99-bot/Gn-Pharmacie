@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User, Pharmacy
+from app.superadmin.routes import log_action
 from app.extensions import db
 from datetime import datetime, timedelta
 

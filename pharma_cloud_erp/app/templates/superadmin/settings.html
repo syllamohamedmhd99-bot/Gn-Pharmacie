@@ -1,0 +1,53 @@
+{% extends "superadmin/base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark">Paramètres Généraux</h2>
+        <p class="text-muted">Configuration technique et globale de la plateforme SaaS.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card stat-card border-0 shadow-sm rounded-4 p-4">
+            <h5 class="fw-bold mb-4">Configuration Email (SMTP)</h5>
+            <form>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">SERVEUR SMTP</label>
+                    <input type="text" class="form-control rounded-3" value="{{ config.MAIL_SERVER }}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">EXPÉDITEUR PAR DÉFAUT</label>
+                    <input type="email" class="form-control rounded-3" placeholder="noreply@pharmacloud.com" readonly>
+                </div>
+                <button type="button" class="btn btn-dark rounded-pill px-4" disabled>Mettre à jour</button>
+                <div class="mt-2 x-small text-muted">Ces paramètres sont configurés via les variables d'environnement.</div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card stat-card border-0 shadow-sm rounded-4 p-4">
+            <h5 class="fw-bold mb-4">Maintenance & Alertes</h5>
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small">MODE MAINTENANCE</span>
+                    <span class="badge bg-success rounded-pill px-3">{{ config.MAINTENANCE_MODE }}</span>
+                </div>
+                <div class="text-muted small">Désactive l'accès à toutes les pharmacies pour maintenance technique.</div>
+            </div>
+            <hr>
+            <div>
+                <label class="form-label small fw-bold">ALERTE GLOBALE (DASHBOARD)</label>
+                <textarea class="form-control rounded-3 mb-3" rows="2" placeholder="Message affiché à tous les clients..."></textarea>
+                <button type="button" class="btn btn-primary rounded-pill px-4" disabled>Publier l'alerte</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small { font-size: 0.7rem; }
+</style>
+{% endblock %}

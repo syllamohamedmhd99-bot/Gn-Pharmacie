@@ -34,7 +34,7 @@
         <p class="mb-0 text-dark opacity-75">Il y a <strong>{{ pending_count }}</strong> nouvelle(s) pharmacie(s) en attente de validation.</p>
     </div>
     <div>
-        <a href="{{ url_for('super_admin_subscriptions') }}" class="btn btn-danger rounded-pill px-4 fw-bold">Valider maintenant</a>
+        <a href="{{ url_for('superadmin.subscriptions') }}" class="btn btn-danger rounded-pill px-4 fw-bold">Valider maintenant</a>
     </div>
 </div>
 {% endif %}
@@ -127,14 +127,14 @@
                             <button type="button" class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#renewModal{{ pharma.id }}">
                                 <i data-lucide="refresh-cw" size="14" class="me-1"></i> Renouveler
                             </button>
-                            <form action="{{ url_for('toggle_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
+                            <form action="{{ url_for('superadmin.toggle_pharmacy', id=pharma.id) }}" method="POST" class="d-inline">
                                 {% if pharma.is_active %}
                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Suspendre</button>
                                 {% else %}
                                 <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">ACTIVER</button>
                                 {% endif %}
                             </form>
-                            <form action="{{ url_for('delete_pharmacy', id=pharma.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cette pharmacie ? Toutes les données (ventes, stocks, employés) seront effacées.')">
+                            <form action="{{ url_for('superadmin.delete_pharmacy', id=pharma.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cette pharmacie ? Toutes les données (ventes, stocks, employés) seront effacées.')">
                                 <button type="submit" class="btn btn-sm btn-danger rounded-circle p-2 ms-1" title="Supprimer">
                                     <i data-lucide="trash-2" size="16"></i>
                                 </button>
@@ -160,7 +160,7 @@
                 <h5 class="fw-bold text-dark">Abonnement : {{ pharma.name }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('update_subscription', id=pharma.id) }}" method="POST">
+            <form action="{{ url_for('superadmin.update_subscription', id=pharma.id) }}" method="POST">
                 <div class="modal-body p-4">
                     <div class="list-group gap-2">
                         {% for p in plans %}
