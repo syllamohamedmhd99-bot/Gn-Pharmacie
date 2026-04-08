@@ -1,6 +1,6 @@
 /* Fix : Empêcher l'écran de trembler/sauter lors de l'ouverture des modales */
 html {
-    scrollbar-gutter: stable;
+    overflow-y: scroll !important;
 }
 
 /* Styles pour l'impression PDF */
