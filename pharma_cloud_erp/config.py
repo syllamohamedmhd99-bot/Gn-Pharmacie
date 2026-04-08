@@ -52,6 +52,12 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "connect_args": {
+            "connect_timeout": 10
+        },
+        "pool_pre_ping": True,
+    }
     # In production, we'll use filesystem for now to avoid Redis timeouts on boot
     SESSION_TYPE = 'filesystem'
     

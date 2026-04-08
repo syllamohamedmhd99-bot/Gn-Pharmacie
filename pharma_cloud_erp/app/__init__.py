@@ -76,76 +76,75 @@ def create_app(config_name='default'):
     # Route SaaS: Initialisation / Migration
     @app.route('/seed')
     def seed():
+        diagnostic_log = []
         try:
-            # 0. Migration SQL Manuelle (ALTER TABLE) pour PostgreSQL
+            # 0. Test de connexion
+            diagnostic_log.append("Test de connexion...")
+            db.session.execute(text("SELECT 1"))
+            diagnostic_log.append("Connexion OK.")
+
+            # 1. Migration SQL Manuelle
+            diagnostic_log.append("Migration is_super_admin...")
             db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE;"))
             db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            print(f"Migration error (ignored if already exists): {e}")
+            diagnostic_log.append("Migration OK.")
 
-        db.create_all()
-        
-        # 1. Création de la Pharmacie par défaut si nécessaire
-        default_pharma = Pharmacy.query.filter_by(name='Pharmacie de Démonstration').first()
-        if not default_pharma:
-            default_pharma = Pharmacy(
-                name='Pharmacie de Démonstration',
-                address='Conakry, Guinée',
-                license_number='DEMO-001'
-            )
-            db.session.add(default_pharma)
-            db.session.flush()
+            # 2. Création des tables
+            diagnostic_log.append("Création des tables manquantes...")
+            db.create_all()
+            diagnostic_log.append("Tables OK.")
             
-        # 2. Gestion de l'Admin SaaS
-        admin_email = 'syllamohamedmhd99@gmail.com'
-        admin = User.query.filter_by(email=admin_email).first()
-        
-        if not admin:
-            admin = User(
-                email=admin_email, 
-                role='Admin', 
-                pharmacy_id=default_pharma.id,
-                is_active=True, 
-                is_super_admin=True, # Nouveau flag permanent
-                first_name='Admin', 
-                last_name='SaaS',
-                can_view_pos=True, 
-                can_view_inventory=True, 
-                can_view_hr=True, 
-                can_view_admin=True
-            )
-            admin.set_password('admin123')
-            db.session.add(admin)
-        else:
-            # Migration: Forcer le statut super-admin pour cet email
-            admin.is_super_admin = True
-            if not admin.pharmacy_id:
-                admin.pharmacy_id = default_pharma.id
-        
-        # 3. Initialisation des Plans de Tarification si vides
-        if SubscriptionPlan.query.count() == 0:
-            plans = [
-                SubscriptionPlan(name='Mensuel', price=150000, duration_days=30, description='Accès complet pour 1 mois'),
-                SubscriptionPlan(name='Trimestriel', price=250000, duration_days=90, description='Accès complet pour 3 mois (Économique)'),
-                SubscriptionPlan(name='Semestriel', price=500000, duration_days=180, description='Accès complet pour 6 mois'),
-                SubscriptionPlan(name='Annuel', price=950000, duration_days=365, description='Le meilleur choix (12 mois)')
-            ]
-            for p in plans:
-                db.session.add(p)
+            # 3. Initialisation des Plans de Tarification si vides
+            if SubscriptionPlan.query.count() == 0:
+                diagnostic_log.append("Initialisation des plans...")
+                plans = [
+                    SubscriptionPlan(name='Mensuel', price=150000, duration_days=30, description='Accès complet pour 1 mois'),
+                    SubscriptionPlan(name='Trimestriel', price=250000, duration_days=90, description='Accès complet pour 3 mois (Économique)'),
+                    SubscriptionPlan(name='Semestriel', price=500000, duration_days=180, description='Accès complet pour 6 mois'),
+                    SubscriptionPlan(name='Annuel', price=950000, duration_days=365, description='Le meilleur choix (12 mois)')
+                ]
+                for p in plans:
+                    db.session.add(p)
+                db.session.commit()
+                diagnostic_log.append("Plans créés.")
+
+            # 4. Création de la Pharmacie par défaut
+            default_pharma = Pharmacy.query.filter_by(name='Pharmacie de Démonstration').first()
+            if not default_pharma:
+                default_pharma = Pharmacy(name='Pharmacie de Démonstration', address='Conakry, Guinée', license_number='DEMO-001')
+                db.session.add(default_pharma)
+                db.session.flush()
+
+            # 5. Gestion de l'Admin SaaS
+            admin_email = 'syllamohamedmhd99@gmail.com'
+            admin = User.query.filter_by(email=admin_email).first()
+            if not admin:
+                admin = User(
+                    email=admin_email, 
+                    role='Admin', 
+                    pharmacy_id=default_pharma.id, 
+                    is_active=True, 
+                    is_super_admin=True,
+                    can_view_pos=True,
+                    can_view_inventory=True,
+                    can_view_hr=True,
+                    can_view_admin=True
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+            else:
+                admin.is_super_admin = True
+                if not admin.pharmacy_id: admin.pharmacy_id = default_pharma.id
             
-        # 4. Migration des Médicaments orphelins
-        orphaned_meds = Medicine.query.filter_by(pharmacy_id=None).all()
-        for m in orphaned_meds:
-            m.pharmacy_id = default_pharma.id
-            
-        try:
             db.session.commit()
+            diagnostic_log.append("Admin/Exploitation OK.")
+            return f"<h1>Succès !</h1><p>{' <br> '.join(diagnostic_log)}</p><a href='/'>Aller à l'accueil</a>"
+
         except Exception as e:
             db.session.rollback()
-            return f"Erreur Migration SaaS : {str(e)}"
-
-        return redirect(url_for('index'))
+            import traceback
+            error_details = traceback.format_exc()
+            return f"<h1>Erreur Critique de Initialisation</h1><pre>{str(e)}</pre><h3>Détails :</h3><pre>{error_details}</pre>"
 
     # Route Super-Admin (Gestion Globale du SaaS)
     @app.route('/superadmin')
