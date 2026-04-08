@@ -19,6 +19,13 @@
             scrollbar-gutter: stable !important;
         }
 
+        .modal-content {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translateZ(0);
+            perspective: 1000;
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--admin-bg);
