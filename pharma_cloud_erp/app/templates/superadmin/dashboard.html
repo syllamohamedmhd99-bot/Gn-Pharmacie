@@ -140,39 +140,6 @@
                                 </button>
                             </form>
                         </div>
-                        
-                        <!-- Modal Renouvellement (Animation retirée pour stopper le tremblement) -->
-                        <div class="modal" id="renewModal{{ pharma.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content rounded-4 border-0">
-                                    <div class="modal-header border-0 p-4 pb-0">
-                                        <h5 class="fw-bold">Abonnement : {{ pharma.name }}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form action="{{ url_for('update_subscription', id=pharma.id) }}" method="POST">
-                                        <div class="modal-body p-4">
-                                            <div class="list-group gap-2">
-                                                {% for p in plans %}
-                                                <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <input type="radio" name="plan_id" value="{{ p.id }}" {% if loop.first %}required{% endif %}>
-                                                        <div>
-                                                            <div class="fw-bold">{{ p.name }}</div>
-                                                            <div class="text-muted x-small">{{ p.duration_days }} jours</div>
-                                                        </div>
-                                                    </div>
-                                                    <span class="badge bg-success-subtle text-success">{{ "{:,.0f}".format(p.price).replace(',', ' ') }} GNF</span>
-                                                </label>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer border-0 p-4 pt-0">
-                                            <button type="submit" class="btn btn-success w-100 py-3 rounded-3 fw-bold shadow-sm">VALIDER LE PAIEMENT</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -183,6 +150,41 @@
         </table>
     </div>
 </div>
+
+<!-- Modales de Renouvellement (Déplacées hors du tableau pour une stabilité totale) -->
+{% for pharma in pharmacies %}
+<div class="modal" id="renewModal{{ pharma.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="fw-bold text-dark">Abonnement : {{ pharma.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('update_subscription', id=pharma.id) }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="list-group gap-2">
+                        {% for p in plans %}
+                        <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer plan-item">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="radio" name="plan_id" value="{{ p.id }}" {% if loop.first %}required{% endif %} class="form-check-input">
+                                <div>
+                                    <div class="fw-bold text-dark">{{ p.name }}</div>
+                                    <div class="text-muted x-small">{{ p.duration_days }} jours</div>
+                                </div>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">{{ "{:,.0f}".format(p.price).replace(',', ' ') }} GNF</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-success w-100 py-3 rounded-3 fw-bold shadow-sm hover-no-shake">VALIDER LE PAIEMENT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
 <style>
     .cursor-pointer { cursor: pointer; }
@@ -197,10 +199,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Correction JSON pour JS injecté par Jinja
-        const phNames = [{% for s in pharma_stats %}"{{ s.name }}",{% endfor %}];
-        const phRev = [{% for s in pharma_stats %}{{ s.saas_revenue }},{% endfor %}];
-        
+        // Sécurisation injection JSON via Jinja
+        const phNames = {{ pharma_stats|map(attribute='name')|list|tojson }};
+        const phRev = {{ pharma_stats|map(attribute='saas_revenue')|list|tojson }};
         const act = {{ pharmacies|selectattr('is_active', 'equalto', True)|list|length }};
         const inact = {{ pharmacies|selectattr('is_active', 'equalto', False)|list|length }};
 
@@ -218,6 +219,7 @@
             options: { 
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 0 }, // Désactiver les animations pour éviter tout tremblement
                 plugins: { 
                     legend: { display: false },
                     tooltip: {
@@ -262,6 +264,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 cutout: '75%', 
+                animation: { duration: 0 },
                 plugins: { legend: { display: false } } 
             }
         });

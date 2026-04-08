@@ -1,0 +1,255 @@
+from flask import render_template, redirect, url_for, flash, request, make_response, jsonify
+from flask_login import login_required, current_user
+from app.superadmin import bp_superadmin
+from app.models import User, Pharmacy, SubscriptionPlan, SubscriptionRecord, Sale
+from app.extensions import db, mail
+from datetime import datetime, timedelta
+from sqlalchemy import func
+import csv
+from io import StringIO
+from flask_mail import Message
+
+def check_super_admin():
+    if not current_user.is_authenticated or not current_user.is_super_admin:
+        flash("Accès réservé au Super-Administrateur.", "danger")
+        return False
+    return True
+
+@bp_superadmin.route('/dashboard')
+@login_required
+def dashboard():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+        
+    try:
+        pharmacies = Pharmacy.query.all()
+        
+        # 1. Revenus Globaux (Ventes des pharmacies)
+        total_global_revenue = db.session.query(func.sum(Sale.total_amount)).scalar() or 0
+        
+        # 2. Revenus SaaS (Abonnements payés)
+        total_saas_revenue = db.session.query(func.sum(SubscriptionRecord.amount)).scalar() or 0
+        
+        # 3. Chiffre d'Affaires SaaS ce mois-ci
+        first_day_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_saas_revenue = db.session.query(func.sum(SubscriptionRecord.amount))\
+            .filter(SubscriptionRecord.timestamp >= first_day_month).scalar() or 0
+
+        # 4. Répartition des Recettes SaaS par pharmacie
+        pharma_stats = []
+        saas_revenue_by_pharma = db.session.query(
+            SubscriptionRecord.pharmacy_id, 
+            func.sum(SubscriptionRecord.amount).label('total')
+        ).group_by(SubscriptionRecord.pharmacy_id).all()
+        
+        saas_map = {r.pharmacy_id: r.total for r in saas_revenue_by_pharma}
+        
+        for p in pharmacies:
+            pharma_stats.append({
+                'id': p.id,
+                'name': p.name,
+                'is_active': p.is_active,
+                'saas_revenue': saas_map.get(p.id, 0)
+            })
+        
+        return render_template('superadmin/dashboard.html', 
+                               pharmacies=pharmacies,
+                               total_global_revenue=total_global_revenue,
+                               total_saas_revenue=total_saas_revenue,
+                               monthly_saas_revenue=monthly_saas_revenue,
+                               pharma_stats=pharma_stats,
+                               plans=SubscriptionPlan.query.filter_by(is_active=True).all())
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur d'accès Dashboard : {str(e)}", "danger")
+        return render_template('superadmin/dashboard.html', 
+                               pharmacies=[],
+                               total_global_revenue=0,
+                               total_saas_revenue=0,
+                               monthly_saas_revenue=0,
+                               pharma_stats=[],
+                               plans=[])
+
+@bp_superadmin.route('/toggle_pharmacy/<int:id>', methods=['POST'])
+@login_required
+def toggle_pharmacy(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+        
+    pharma = Pharmacy.query.get_or_404(id)
+    pharma.is_active = not pharma.is_active
+    
+    # Activer/Désactiver tous les utilisateurs de cette pharmacie également
+    for user in pharma.users:
+        user.is_active = pharma.is_active
+        
+    db.session.commit()
+    status = "activée" if pharma.is_active else "désactivée"
+    flash(f"La pharmacie {pharma.name} a été {status} avec succès.", "success")
+    return redirect(url_for('superadmin.dashboard'))
+
+@bp_superadmin.route('/update_subscription/<int:id>', methods=['POST'])
+@login_required
+def update_subscription(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+        
+    pharma = Pharmacy.query.get_or_404(id)
+    plan_id = request.form.get('plan_id')
+    plan = SubscriptionPlan.query.get(plan_id)
+    
+    if plan:
+        # Enregistrement de la transaction
+        record = SubscriptionRecord(
+            pharmacy_id=pharma.id,
+            plan_name=plan.name,
+            amount=plan.price
+        )
+        db.session.add(record)
+
+        # Mise à jour de la pharmacie
+        start_date = pharma.subscription_end_date if pharma.subscription_end_date and pharma.subscription_end_date > datetime.utcnow() else datetime.utcnow()
+        pharma.subscription_end_date = start_date + timedelta(days=plan.duration_days)
+        pharma.subscription_plan = plan.name
+        pharma.is_active = True
+        
+        for u in pharma.users:
+            if u.role == 'Admin':
+                u.is_active = True
+        
+        # --- NOTIFICATION EMAIL AU SUPER ADMIN ---
+        try:
+            # On utilise l'email du superadmin au lieu de hardcoder
+            superadmins = User.query.filter_by(is_super_admin=True, is_active=True).all()
+            recipients = [u.email for u in superadmins] if superadmins else ["syllamohamedmhd99@gmail.com"]
+            
+            msg = Message(f"💸 Nouveau Paiement : {pharma.name}",
+                          recipients=recipients)
+            msg.body = f"Bonjour,\n\nUne nouvelle transaction a été validée :\n\n" \
+                       f"Pharmacie : {pharma.name}\n" \
+                       f"Forfait : {plan.name}\n" \
+                       f"Montant : {plan.price:,.0f} GNF\n" \
+                       f"Nouvelle expiration : {pharma.subscription_end_date.strftime('%d/%m/%Y')}\n\n" \
+                       f"L'accès a été prolongé automatiquement.\n\n" \
+                       f"Cordialement,\nPharmaCloud SaaS"
+            mail.send(msg)
+        except Exception as e:
+            print(f"Erreur notification email: {e}")
+
+        db.session.commit()
+        flash(f"Abonnement {plan.name} activé pour {pharma.name}.", "success")
+    
+    return redirect(url_for('superadmin.dashboard'))
+
+@bp_superadmin.route('/reports')
+@login_required
+def reports():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+    
+    history = SubscriptionRecord.query.order_by(SubscriptionRecord.timestamp.desc()).all()
+    return render_template('superadmin/reports.html', history=history)
+
+@bp_superadmin.route('/export/payments')
+@login_required
+def export_payments():
+    if not check_super_admin():
+        return "Unauthorized", 401
+    
+    history = SubscriptionRecord.query.all()
+    
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['ID', 'Pharmacie', 'Forfait', 'Montant (GNF)', 'Date'])
+    
+    for record in history:
+        pharma = Pharmacy.query.get(record.pharmacy_id)
+        pharma_name = pharma.name if pharma else "Inconnue"
+        cw.writerow([record.id, pharma_name, record.plan_name, record.amount, record.timestamp.strftime('%d/%m/%Y %H:%M')])
+    
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=rapport_paiements_saas.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+@bp_superadmin.route('/subscriptions')
+@login_required
+def subscriptions():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+        
+    pharmacies = Pharmacy.query.order_by(Pharmacy.id.desc()).all()
+    plans = SubscriptionPlan.query.filter_by(is_active=True).all()
+    return render_template('superadmin/subscriptions.html', pharmacies=pharmacies, plans=plans, now=datetime.utcnow())
+
+@bp_superadmin.route('/plans')
+@login_required
+def plans():
+    if not check_super_admin():
+        return redirect(url_for('index'))
+    plans = SubscriptionPlan.query.all()
+    return render_template('superadmin/plans.html', plans=plans)
+
+@bp_superadmin.route('/plans/add', methods=['POST'])
+@login_required
+def add_plan():
+    if not check_super_admin():
+        return "Unauthorized", 401
+    
+    new_plan = SubscriptionPlan(
+        name=request.form.get('name'),
+        price=float(request.form.get('price')),
+        duration_days=int(request.form.get('duration')),
+        description=request.form.get('description')
+    )
+    db.session.add(new_plan)
+    db.session.commit()
+    flash("Nouveau forfait ajouté avec succès.", "success")
+    return redirect(url_for('superadmin.plans'))
+
+@bp_superadmin.route('/plans/delete/<int:id>')
+@login_required
+def delete_plan(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+    plan = SubscriptionPlan.query.get_or_404(id)
+    db.session.delete(plan)
+    db.session.commit()
+    flash("Forfait supprimé.", "warning")
+    return redirect(url_for('superadmin.plans'))
+
+@bp_superadmin.route('/approve_pharmacy/<int:id>', methods=['POST'])
+@login_required
+def approve_pharmacy(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+        
+    pharma = Pharmacy.query.get_or_404(id)
+    pharma.is_active = True
+    
+    # Activer tous les utilisateurs de cette pharmacie
+    for user in pharma.users:
+        user.is_active = True
+        
+    db.session.commit()
+    flash(f"La pharmacie {pharma.name} a été validée avec succès !", "success")
+    return redirect(url_for('superadmin.subscriptions'))
+
+@bp_superadmin.route('/pharmacy/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_pharmacy(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+        
+    pharma = Pharmacy.query.get_or_404(id)
+    name = pharma.name
+    
+    try:
+        db.session.delete(pharma)
+        db.session.commit()
+        flash(f"La pharmacie {name} et toutes ses données ont été supprimées.", "warning")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de la suppression : {str(e)}", "danger")
+        
+    return redirect(url_for('superadmin.dashboard'))

@@ -57,8 +57,9 @@ class ProductionConfig(Config):
         },
         "pool_pre_ping": True,
     }
-    # In production, we'll use filesystem for now to avoid Redis timeouts on boot
-    SESSION_TYPE = 'filesystem'
+    # En production, on utilise sqlalchemy pour que les sessions persistent
+    # même après un redémarrage du serveur (Vercel/Render)
+    SESSION_TYPE = 'sqlalchemy'
     
 config = {
     'development': DevelopmentConfig,

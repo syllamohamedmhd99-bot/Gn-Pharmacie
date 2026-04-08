@@ -11,6 +11,36 @@ def load_user(user_id):
         # En cas de colonne manquante (migration en cours), on déconnecte au lieu de 500
         return None
 
+from sqlalchemy import event, and_
+from flask import request
+
+# HOOK DE SÉCURITÉ : Multi-Tenancy Automatique
+# Ce hook injecte systématiquement "filter_by(pharmacy_id=...)" sur toutes les requêtes
+# SI l'utilisateur est connecté et n'est pas un SuperAdmin.
+@event.listens_for(db.Query, "before_compile", retval=True)
+def apply_tenant_filter(query):
+    from flask_login import current_user
+    
+    # 1. Ne pas filtrer si : Non connecté / SuperAdmin / Route SuperAdmin
+    if not current_user or not current_user.is_authenticated:
+        return query
+        
+    if current_user.is_super_admin:
+        return query
+        
+    # Vérifier si on est dans un contexte de Blueprint SuperAdmin (sécurité supplémentaire)
+    if request and request.blueprint == 'superadmin':
+        return query
+
+    # 2. Identifier les entités de la requête qui ont une colonne 'pharmacy_id'
+    for column_descr in query.column_descriptions:
+        entity = column_descr['entity']
+        if entity and hasattr(entity, 'pharmacy_id'):
+            # 3. Appliquer le filtre de sécurité de la pharmacie actuelle
+            query = query.filter(entity.pharmacy_id == current_user.pharmacy_id)
+            
+    return query
+
 # PILIER 0: Multi-Tenancy (SaaS)
 class Pharmacy(db.Model):
     __tablename__ = 'pharmacies'

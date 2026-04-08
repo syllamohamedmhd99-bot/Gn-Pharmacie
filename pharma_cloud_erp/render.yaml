@@ -4,10 +4,10 @@ services:
     name: pharma-cloud-erp
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: (python -c "from app import create_app, db; app=create_app('production'); with app.app_context(): db.create_all()" || true) && gunicorn -b 0.0.0.0:$PORT --timeout 120 run:app
+    startCommand: (python -m flask seed || true) && gunicorn -b 0.0.0.0:$PORT --timeout 120 run:app
     envVars:
       - key: FLASK_APP
-        value: run.py
+        value: manage.py
       - key: FLASK_ENV
         value: production
       - key: DATABASE_URL
@@ -17,18 +17,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: SESSION_TYPE
-        value: redis
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: pharma-redis
-          property: connectionString
-
-  # Service Redis pour les sessions
-  - type: redis
-    name: pharma-redis
-    plan: free
-    ipAllowList: [] # Autorise uniquement les connexions internes
+        value: sqlalchemy
 
 databases:
   - name: pharma-db

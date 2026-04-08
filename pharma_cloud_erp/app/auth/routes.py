@@ -33,8 +33,8 @@ def login():
         login_user(user, remember=remember)
         
         # Redirection directe pour le Super-Admin
-        if user.email == 'syllamohamedmhd99@gmail.com':
-            return redirect(url_for('super_admin'))
+        if user.is_super_admin:
+            return redirect(url_for('superadmin.dashboard'))
             
         return redirect(url_for('index'))
         
@@ -132,12 +132,16 @@ def register_admin():
             flash("Une erreur est survenue lors de l'enregistrement de vos accès. Veuillez réessayer.", "danger")
             return redirect(url_for('auth.register'))
         
-        # 4. Alerte Email au Super-Admin
+        # 4. Alerte Email aux Super-Admins
         try:
             from flask_mail import Message
             from app.extensions import mail
+            # Récupérer les emails de tous les super-admins actifs
+            super_admins = User.query.filter_by(is_super_admin=True, is_active=True).all()
+            recipients = [sa.email for sa in super_admins] if super_admins else ["syllamohamedmhd99@gmail.com"]
+
             msg = Message("Nouvelle demande d'inscription - PharmaCloud",
-                          recipients=["syllamohamedmhd99@gmail.com"])
+                          recipients=recipients)
             msg.body = f"Bonjour,\n\nUne nouvelle pharmacie s'est inscrite sur la plateforme :\n" \
                        f"Nom : {pharma_name}\n" \
                        f"Admin : {first_name} {last_name} ({email})\n" \
