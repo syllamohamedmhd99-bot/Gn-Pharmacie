@@ -6,12 +6,17 @@
     <title>{% block title %}SaaS Control Center - PharmaCloud{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
             --admin-sidebar: #0f172a;
             --admin-accent: #10b981;
             --admin-bg: #f1f5f9;
+        }
+
+        html {
+            scrollbar-gutter: stable !important;
         }
 
         body {
@@ -87,7 +92,7 @@
     </style>
 </head>
 <body>
-    <div class="admin-sidebar">
+    <div class="admin-sidebar fixed-top">
         <div class="admin-brand">
             <div class="bg-success p-2 rounded-3">
                 <i data-lucide="layout-dashboard" size="24"></i>
