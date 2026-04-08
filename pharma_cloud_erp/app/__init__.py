@@ -101,20 +101,24 @@ def create_app(config_name='default'):
             db.create_all()
             diagnostic_log.append("Tables OK.")
 
-            # 2. Migration SQL Manuelle
-            diagnostic_log.append("Migration is_super_admin...")
-            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE;"))
-            diagnostic_log.append("Migration customer_id in sales...")
-            db.session.execute(text("ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);"))
+            # Migrations SQL Manuelles (Sécurisées pour SQLite/Postgres)
+            diagnostic_log.append("Exécution des migrations de schéma...")
+            cols_to_add = [
+                "ALTER TABLE users ADD COLUMN is_super_admin BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE sales ADD COLUMN customer_id INTEGER",
+                "ALTER TABLE users ADD COLUMN can_view_crm BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE users ADD COLUMN can_view_tasks BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE users ADD COLUMN can_view_analytics BOOLEAN DEFAULT FALSE"
+            ]
+            for cmd in cols_to_add:
+                try:
+                    db.session.execute(text(cmd))
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    # On ignore si la colonne existe déjà (cas courant sur SQLite)
             
-            # Nouvelles permissions modules
-            diagnostic_log.append("Migration nouvelles permissions...")
-            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_view_crm BOOLEAN DEFAULT FALSE;"))
-            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_view_tasks BOOLEAN DEFAULT FALSE;"))
-            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_view_analytics BOOLEAN DEFAULT FALSE;"))
-            
-            db.session.commit()
-            diagnostic_log.append("Migrations OK.")
+            diagnostic_log.append("Migrations terminées.")
             
             # 3. Initialisation des Plans de Tarification si vides
             if SubscriptionPlan.query.count() == 0:
