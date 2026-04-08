@@ -11,8 +11,16 @@ class Config:
     # SQLALCHEMY Configuration
     db_url = os.environ.get('DATABASE_URL')
     if db_url and db_url.strip():
+        # Nettoyage de l'URL pour la compatibilité avec psycopg2
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
+        
+        # Supprime ?pgbouncer=true qui fait planter psycopg2
+        if "?pgbouncer=true" in db_url:
+            db_url = db_url.replace("?pgbouncer=true", "")
+        elif "&pgbouncer=true" in db_url:
+            db_url = db_url.replace("&pgbouncer=true", "")
+            
         SQLALCHEMY_DATABASE_URI = db_url
     else:
         SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
