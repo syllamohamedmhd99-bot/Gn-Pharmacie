@@ -1,3 +1,8 @@
+/* Fix : Empêcher l'écran de trembler/sauter lors de l'ouverture des modales */
+html {
+    scrollbar-gutter: stable;
+}
+
 /* Styles pour l'impression PDF */
 @media print {
     .btn, .modal, .no-print, nav, .navbar, .sidebar, footer, .modal-backdrop {

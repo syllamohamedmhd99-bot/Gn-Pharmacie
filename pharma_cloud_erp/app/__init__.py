@@ -112,7 +112,19 @@ def create_app(config_name='default'):
                 "ALTER TABLE sales ADD COLUMN customer_id INTEGER",
                 "ALTER TABLE users ADD COLUMN can_view_crm BOOLEAN DEFAULT FALSE",
                 "ALTER TABLE users ADD COLUMN can_view_tasks BOOLEAN DEFAULT FALSE",
-                "ALTER TABLE users ADD COLUMN can_view_analytics BOOLEAN DEFAULT FALSE"
+                "ALTER TABLE users ADD COLUMN can_view_analytics BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE suppliers ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE medicines ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE batches ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE sale_items ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE purchase_orders ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE shifts ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE time_clocks ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE payroll_records ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE salary_advances ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE customers ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE tasks ADD COLUMN pharmacy_id INTEGER",
+                "ALTER TABLE leave_requests ADD COLUMN pharmacy_id INTEGER"
             ]
             for cmd in cols_to_add:
                 try:
