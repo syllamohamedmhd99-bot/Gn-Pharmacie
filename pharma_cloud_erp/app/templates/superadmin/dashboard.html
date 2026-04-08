@@ -134,6 +134,11 @@
                                 <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">ACTIVER</button>
                                 {% endif %}
                             </form>
+                            <form action="{{ url_for('delete_pharmacy', id=pharma.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer DÉFINITIVEMENT cette pharmacie ? Toutes les données (ventes, stocks, employés) seront effacées.')">
+                                <button type="submit" class="btn btn-sm btn-danger rounded-circle p-2 ms-1" title="Supprimer">
+                                    <i data-lucide="trash-2" size="16"></i>
+                                </button>
+                            </form>
                         </div>
                         
                         <!-- Modal Renouvellement -->

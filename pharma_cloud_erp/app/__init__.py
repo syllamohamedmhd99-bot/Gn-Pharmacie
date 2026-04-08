@@ -408,5 +408,24 @@ def create_app(config_name='default'):
         flash(f"La pharmacie {pharma.name} a été validée avec succès !", "success")
         return redirect(url_for('super_admin_subscriptions'))
 
+    @app.route('/superadmin/pharmacy/delete/<int:id>', methods=['POST'])
+    @login_required
+    def delete_pharmacy(id):
+        if current_user.email != 'syllamohamedmhd99@gmail.com':
+            return "Unauthorized", 401
+            
+        pharma = Pharmacy.query.get_or_404(id)
+        name = pharma.name
+        
+        try:
+            db.session.delete(pharma)
+            db.session.commit()
+            flash(f"La pharmacie {name} et toutes ses données ont été supprimées.", "warning")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erreur lors de la suppression : {str(e)}", "danger")
+            
+        return redirect(url_for('super_admin'))
+
     # L'initialisation de la base sera gérée par la commande de démarrage
     return app

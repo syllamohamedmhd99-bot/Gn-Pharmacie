@@ -28,10 +28,11 @@ class Pharmacy(db.Model):
     is_active = db.Column(db.Boolean, default=False)
 
     # Relationships
-    users = db.relationship('User', backref='pharmacy', lazy=True)
-    medicines = db.relationship('Medicine', backref='pharmacy', lazy=True)
-    sales = db.relationship('Sale', backref='pharmacy', lazy=True)
-    suppliers = db.relationship('Supplier', backref='pharmacy', lazy=True)
+    users = db.relationship('User', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
+    medicines = db.relationship('Medicine', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
+    sales = db.relationship('Sale', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
+    suppliers = db.relationship('Supplier', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
+    payments = db.relationship('SubscriptionRecord', backref='pharma', lazy=True, cascade="all, delete-orphan")
 
 # PILIER 1: Utilisateurs & RH
 class User(UserMixin, db.Model):
@@ -82,7 +83,7 @@ class Medicine(db.Model):
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=True)
     min_stock_level = db.Column(db.Integer, default=10) # Seuil d'alerte
     
-    batches = db.relationship('Batch', backref='medicine', lazy=True)
+    batches = db.relationship('Batch', backref='medicine', lazy=True, cascade="all, delete-orphan")
 
     @property
     def total_stock(self):
@@ -132,7 +133,7 @@ class Sale(db.Model):
     payment_method = db.Column(db.String(50), nullable=False) # Cash, OrangeMoney, MTN
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
-    items = db.relationship('SaleItem', backref='sale', lazy=True)
+    items = db.relationship('SaleItem', backref='sale', lazy=True, cascade="all, delete-orphan")
 
 class SaleItem(db.Model):
     __tablename__ = 'sale_items'
