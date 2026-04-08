@@ -91,8 +91,12 @@ def create_app(config_name='default'):
     def seed():
         diagnostic_log = []
         try:
+            # Force un rollback pour libérer les transactions PostgreSQL avortées 
+            # par des erreurs de colonnes lors du boot (load_user)
+            db.session.rollback()
+            
             # 0. Test de connexion
-            diagnostic_log.append("Test de connexion...")
+            diagnostic_log.append("Nettoyage transaction PostgreSQL OK.")
             db.session.execute(text("SELECT 1"))
             diagnostic_log.append("Connexion OK.")
 
