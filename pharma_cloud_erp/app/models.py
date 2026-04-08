@@ -56,6 +56,7 @@ class User(UserMixin, db.Model):
     can_view_inventory = db.Column(db.Boolean, default=False)
     can_view_hr = db.Column(db.Boolean, default=True)
     can_view_admin = db.Column(db.Boolean, default=False)
+    is_super_admin = db.Column(db.Boolean, default=False)
     
     shifts = db.relationship('Shift', backref='user', lazy=True, cascade="all, delete-orphan")
     timeclocks = db.relationship('TimeClock', backref='user', lazy=True, cascade="all, delete-orphan")

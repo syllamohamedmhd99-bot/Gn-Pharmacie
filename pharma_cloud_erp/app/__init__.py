@@ -45,7 +45,7 @@ def create_app(config_name='default'):
         if not current_user.is_authenticated:
             return render_template('marketing/landing.html')
             
-        if current_user.email == 'syllamohamedmhd99@gmail.com':
+        if current_user.is_super_admin:
             return redirect(url_for('super_admin'))
 
         # FILTRE SAAS: Statistiques de MA pharmacie
@@ -98,6 +98,7 @@ def create_app(config_name='default'):
                 role='Admin', 
                 pharmacy_id=default_pharma.id,
                 is_active=True, 
+                is_super_admin=True, # Nouveau flag permanent
                 first_name='Admin', 
                 last_name='SaaS',
                 can_view_pos=True, 
@@ -108,7 +109,8 @@ def create_app(config_name='default'):
             admin.set_password('admin123')
             db.session.add(admin)
         else:
-            # Migration: Rattaché à la pharmacie démo si orphelin
+            # Migration: Forcer le statut super-admin pour cet email
+            admin.is_super_admin = True
             if not admin.pharmacy_id:
                 admin.pharmacy_id = default_pharma.id
         
@@ -129,8 +131,8 @@ def create_app(config_name='default'):
     @app.route('/superadmin')
     @login_required
     def super_admin():
-        # Sécurité : Seul l'admin maître peut voir tout
-        if current_user.email != 'syllamohamedmhd99@gmail.com':
+        # Sécurité : Flag en base de données privilégié
+        if not current_user.is_super_admin:
             flash("Accès réservé au Super-Administrateur.", "danger")
             return redirect(url_for('index'))
             
@@ -176,8 +178,8 @@ def create_app(config_name='default'):
 
     @app.before_request
     def check_subscription():
-        # Ne s'applique qu'au utilisateurs connectés qui ne sont pas Super-Admin
-        if current_user.is_authenticated and current_user.email != 'syllamohamedmhd99@gmail.com':
+        # Ne s'applique qu'aux utilisateurs connectés qui ne sont pas Super-Admin
+        if current_user.is_authenticated and not current_user.is_super_admin:
             # Ignorer pour les routes essentielles (logout, static, index, settings)
             if request.endpoint in ['auth.logout', 'static', 'index', 'inventory.settings']:
                 return
