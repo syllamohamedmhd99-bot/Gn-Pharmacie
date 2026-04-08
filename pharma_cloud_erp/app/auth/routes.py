@@ -42,6 +42,11 @@ def login():
 
 @bp_auth.route('/register', methods=['GET', 'POST'])
 def register():
+    # Capturer le plan si fourni (Landing page)
+    requested_plan = request.args.get('plan')
+    if requested_plan:
+        session['reg_plan'] = requested_plan
+
     # Étape 1 : Informations sur la Pharmacie
     if request.method == 'POST':
         name = request.form.get('pharmacy_name', '').strip()
@@ -92,7 +97,7 @@ def register_admin():
                 name=pharma_name,
                 address=session.get('reg_pharma_address'),
                 license_number=session.get('reg_pharma_license'),
-                subscription_plan='Essai',
+                subscription_plan=session.get('reg_plan', 'Essai'),
                 subscription_end_date=trial_end,
                 is_active=False # Verrouillé par défaut
             )

@@ -199,7 +199,7 @@
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="pricing-card popular h-100">
+                    <div class="pricing-card popular h-100 d-flex flex-column">
                         <h5 class="fw-bold">MENSUEL</h5>
                         <div class="pricing-price">150 000<small style="font-size: 1rem;"> GNF</small></div>
                         <p class="text-muted">Sans engagement.</p>
@@ -209,31 +209,33 @@
                             <li><i data-lucide="check" size="16" class="text-success me-2"></i>Ventes illimitées</li>
                             <li><i data-lucide="check" size="16" class="text-success me-2"></i>Support prioritaire</li>
                         </ul>
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary w-100 rounded-pill mt-4">Choisir ce plan</a>
+                        <a href="{{ url_for('auth.register', plan='Mensuel') }}" class="btn btn-primary w-100 rounded-pill mt-auto">Choisir ce plan</a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="pricing-card h-100">
+                    <div class="pricing-card h-100 d-flex flex-column">
                         <h5 class="fw-bold">TRIMESTRIEL</h5>
                         <div class="pricing-price text-success">250 000<small style="font-size: 1rem;"> GNF</small></div>
                         <p class="text-muted">Le plus économique.</p>
                         <hr>
-                        <ul class="list-unstyled gap-2 d-grid">
+                        <ul class="list-unstyled gap-2 d-grid text-start">
                             <li><i data-lucide="check" size="16" class="text-success me-2"></i>Promo : 1 mois offert</li>
                             <li><i data-lucide="stars" size="16" class="text-warning me-2"></i>Accès Premium</li>
                         </ul>
+                        <a href="{{ url_for('auth.register', plan='Trimestriel') }}" class="btn btn-outline-primary w-100 rounded-pill mt-auto">Choisir ce plan</a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <div class="pricing-card h-100">
+                    <div class="pricing-card h-100 d-flex flex-column">
                         <h5 class="fw-bold">ANNUEL</h5>
                         <div class="pricing-price">950 000<small style="font-size: 1rem;"> GNF</small></div>
                         <p class="text-muted">Tranquillité totale.</p>
                         <hr>
-                        <ul class="list-unstyled gap-2 d-grid">
+                        <ul class="list-unstyled gap-2 d-grid text-start">
                             <li><i data-lucide="check" size="16" class="text-success me-2"></i>Économisez 850 000 GNF</li>
                             <li><i data-lucide="shield-check" size="16" class="text-primary me-2"></i>Garantie 1 an</li>
                         </ul>
+                        <a href="{{ url_for('auth.register', plan='Annuel') }}" class="btn btn-outline-primary w-100 rounded-pill mt-auto">Choisir ce plan</a>
                     </div>
                 </div>
             </div>
