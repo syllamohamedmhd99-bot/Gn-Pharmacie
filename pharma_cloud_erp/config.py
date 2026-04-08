@@ -11,15 +11,22 @@ class Config:
     # SQLALCHEMY Configuration
     db_url = os.environ.get('DATABASE_URL')
     if db_url and db_url.strip():
-        # Nettoyage de l'URL pour la compatibilité avec psycopg2
+        from urllib.parse import urlparse, urlunparse
+        
+        # Nettoyage profond de l'URL
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
-        
-        # Supprime ?pgbouncer=true qui fait planter psycopg2
-        if "?pgbouncer=true" in db_url:
-            db_url = db_url.replace("?pgbouncer=true", "")
-        elif "&pgbouncer=true" in db_url:
-            db_url = db_url.replace("&pgbouncer=true", "")
+            
+        parsed = urlparse(db_url)
+        # On reconstruit l'URL sans les paramètres de requête (query) qui font planter psycopg2
+        db_url = urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            '', # On vide la query
+            parsed.fragment
+        ))
             
         SQLALCHEMY_DATABASE_URI = db_url
     else:
