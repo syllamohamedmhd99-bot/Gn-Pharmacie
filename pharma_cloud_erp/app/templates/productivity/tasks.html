@@ -64,6 +64,14 @@
                                     <button type="submit" class="dropdown-item small text-success fw-bold">Marquer "Terminé"</button>
                                 </form>
                             </li>
+                            {% if current_user.role == 'Admin' %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ url_for('productivity.delete_task', id=t.id) }}" method="POST" onsubmit="return confirm('Supprimer cette tâche ?');">
+                                    <button type="submit" class="dropdown-item small text-danger"><i data-lucide="trash-2" size="14" class="me-2"></i>Supprimer</button>
+                                </form>
+                            </li>
+                            {% endif %}
                         </ul>
                     </div>
                 </div>

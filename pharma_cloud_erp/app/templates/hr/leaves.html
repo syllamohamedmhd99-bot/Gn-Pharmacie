@@ -69,8 +69,8 @@
                         </span>
                     </td>
                     <td class="text-end pe-4">
-                        {% if current_user.role == 'Admin' and r.status == 'En attente' %}
-                        <div class="d-flex gap-2 justify-content-end">
+                        <div class="d-flex gap-2 justify-content-end align-items-center">
+                            {% if current_user.role == 'Admin' and r.status == 'En attente' %}
                             <form action="{{ url_for('hr.update_leave_status', id=r.id) }}" method="POST">
                                 <input type="hidden" name="status" value="Approuvé">
                                 <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">Valider</button>
@@ -79,10 +79,20 @@
                                 <input type="hidden" name="status" value="Refusé">
                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Refuser</button>
                             </form>
+                            {% endif %}
+                            
+                            {% if current_user.role == 'Admin' %}
+                            <form action="{{ url_for('hr.delete_leave', id=r.id) }}" method="POST" onsubmit="return confirm('Supprimer définitivement cette demande ?');">
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Supprimer">
+                                    <i data-lucide="trash-2" size="18"></i>
+                                </button>
+                            </form>
+                            {% elif r.status == 'En attente' %}
+                            <span class="text-muted small italic">En attente...</span>
+                            {% else %}
+                            <span class="text-muted small">{{ r.status }}</span>
+                            {% endif %}
                         </div>
-                        {% else %}
-                        <span class="text-muted small italic">Aucune action</span>
-                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

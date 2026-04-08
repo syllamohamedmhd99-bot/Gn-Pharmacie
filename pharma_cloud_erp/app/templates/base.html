@@ -165,54 +165,82 @@
             </a>
 
             <!-- PÔLE VENTES & CLIENTS -->
-            <div class="text-muted small fw-bold px-3 mt-3 mb-1" style="font-size: 0.65rem;">VENTES & CLIENTS</div>
-            {% if current_user.can_view_pos or current_user.role == 'Admin' %}
-            <a class="nav-link {% if 'pos' in request.endpoint %}active{% endif %}" href="{{ url_for('pos.terminal') }}">
-                <i data-lucide="shopping-cart" size="20"></i> POS Terminal
-            </a>
-            {% endif %}
-            <a class="nav-link {% if 'crm' in request.endpoint %}active{% endif %}" href="{{ url_for('crm.index') }}">
-                <i data-lucide="users-2" size="20"></i> Clientèle (CRM)
-            </a>
+            <div class="nav-item">
+                <a class="nav-link d-flex justify-content-between align-items-center {% if 'pos' in request.endpoint or 'crm' in request.endpoint %}active{% endif %}" 
+                   data-bs-toggle="collapse" href="#collapseVentes" role="button" aria-expanded="{% if 'pos' in request.endpoint or 'crm' in request.endpoint %}true{% else %}false{% endif %}" aria-controls="collapseVentes">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="shopping-cart" size="20"></i> Ventes & Clients
+                    </div>
+                    <i data-lucide="chevron-down" size="14"></i>
+                </a>
+                <div class="collapse {% if 'pos' in request.endpoint or 'crm' in request.endpoint %}show{% endif %}" id="collapseVentes">
+                    <div class="ps-4">
+                        {% if current_user.can_view_pos or current_user.role == 'Admin' %}
+                        <a class="nav-link py-2 {% if 'pos' in request.endpoint %}active{% endif %}" href="{{ url_for('pos.terminal') }}" style="font-size: 0.85rem;"> Terminal POS</a>
+                        {% endif %}
+                        <a class="nav-link py-2 {% if 'crm' in request.endpoint %}active{% endif %}" href="{{ url_for('crm.index') }}" style="font-size: 0.85rem;"> Clientèle (CRM)</a>
+                    </div>
+                </div>
+            </div>
 
             <!-- PÔLE STOCK -->
-            <div class="text-muted small fw-bold px-3 mt-3 mb-1" style="font-size: 0.65rem;">LOGISTIQUE</div>
-            {% if current_user.can_view_inventory or current_user.role == 'Admin' %}
-            <a class="nav-link {% if 'inventory' in request.endpoint and 'settings' not in request.path %}active{% endif %}" href="{{ url_for('inventory.dashboard') }}">
-                <i data-lucide="package" size="20"></i> Stock & FEFO
-            </a>
-            {% endif %}
+            <div class="nav-item">
+                <a class="nav-link d-flex justify-content-between align-items-center {% if 'inventory' in request.endpoint and 'settings' not in request.path %}active{% endif %}" 
+                   data-bs-toggle="collapse" href="#collapseStock" role="button" aria-expanded="{% if 'inventory' in request.endpoint and 'settings' not in request.path %}true{% else %}false{% endif %}" aria-controls="collapseStock">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="package" size="20"></i> Logistique
+                    </div>
+                    <i data-lucide="chevron-down" size="14"></i>
+                </a>
+                <div class="collapse {% if 'inventory' in request.endpoint and 'settings' not in request.path %}show{% endif %}" id="collapseStock">
+                    <div class="ps-4">
+                        {% if current_user.can_view_inventory or current_user.role == 'Admin' %}
+                        <a class="nav-link py-2 {% if 'inventory' in request.endpoint and 'settings' not in request.path %}active{% endif %}" href="{{ url_for('inventory.dashboard') }}" style="font-size: 0.85rem;"> Stock & FEFO</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
 
             <!-- PÔLE RH & PRODUCTIVITÉ -->
-            <div class="text-muted small fw-bold px-3 mt-3 mb-1" style="font-size: 0.65rem;">RH & PRODUCTIVITÉ</div>
-            {% if current_user.can_view_hr or current_user.role == 'Admin' %}
-            <a class="nav-link {% if 'hr' in request.path and 'directory' not in request.path and 'history' not in request.path and 'leaves' not in request.path %}active{% endif %}" href="{{ url_for('hr.dashboard') }}">
-                <i data-lucide="users" size="20"></i> RH & Plannings
-            </a>
-            <a class="nav-link {% if 'leaves' in request.path %}active{% endif %}" href="{{ url_for('hr.leaves') }}">
-                <i data-lucide="calendar-off" size="20"></i> Gestion Congés
-            </a>
-            <a class="nav-link {% if 'calendar' in request.endpoint %}active{% endif %}" href="{{ url_for('productivity.calendar') }}">
-                <i data-lucide="calendar-days" size="20"></i> Mon Calendrier
-            </a>
-            <a class="nav-link {% if 'tasks' in request.endpoint %}active{% endif %}" href="{{ url_for('productivity.tasks') }}">
-                <i data-lucide="check-square" size="20"></i> Tâches & Missions
-            </a>
-            {% endif %}
+            <div class="nav-item">
+                <a class="nav-link d-flex justify-content-between align-items-center {% if 'hr' in request.path or 'calendar' in request.endpoint or 'tasks' in request.endpoint %}active{% endif %}" 
+                   data-bs-toggle="collapse" href="#collapseRH" role="button" aria-expanded="{% if 'hr' in request.path or 'calendar' in request.endpoint or 'tasks' in request.endpoint %}true{% else %}false{% endif %}" aria-controls="collapseRH">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="users" size="20"></i> RH & Productivité
+                    </div>
+                    <i data-lucide="chevron-down" size="14"></i>
+                </a>
+                <div class="collapse {% if 'hr' in request.path or 'calendar' in request.endpoint or 'tasks' in request.endpoint %}show{% endif %}" id="collapseRH">
+                    <div class="ps-4">
+                        {% if current_user.can_view_hr or current_user.role == 'Admin' %}
+                        <a class="nav-link py-2 {% if 'hr' in request.path and 'directory' not in request.path and 'leaves' not in request.path %}active{% endif %}" href="{{ url_for('hr.dashboard') }}" style="font-size: 0.85rem;"> Plannings</a>
+                        <a class="nav-link py-2 {% if 'leaves' in request.path %}active{% endif %}" href="{{ url_for('hr.leaves') }}" style="font-size: 0.85rem;"> Gestion Congés</a>
+                        <a class="nav-link py-2 {% if 'calendar' in request.endpoint %}active{% endif %}" href="{{ url_for('productivity.calendar') }}" style="font-size: 0.85rem;"> Mon Calendrier</a>
+                        <a class="nav-link py-2 {% if 'tasks' in request.endpoint %}active{% endif %}" href="{{ url_for('productivity.tasks') }}" style="font-size: 0.85rem;"> Tâches & Missions</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
 
             <!-- PÔLE ADMINISTRATION -->
-            <div class="text-muted small fw-bold px-3 mt-3 mb-1" style="font-size: 0.65rem;">ANALYTIQUE & ADMIN</div>
-            <a class="nav-link {% if 'reports' in request.endpoint %}active{% endif %}" href="{{ url_for('analytics.reports') }}">
-                <i data-lucide="bar-chart-3" size="20"></i> Rapports & Stats
-            </a>
-            {% if current_user.can_view_admin or current_user.role == 'Admin' %}
-            <a class="nav-link {% if 'directory' in request.path %}active{% endif %}" href="{{ url_for('hr.directory') }}">
-                <i data-lucide="contact" size="20"></i> Annuaire & Paie
-            </a>
-            <a class="nav-link {% if 'settings' in request.path %}active{% endif %}" href="{{ url_for('inventory.settings') }}">
-                <i data-lucide="settings" size="20"></i> Paramètres
-            </a>
-            {% endif %}
+            <div class="nav-item">
+                <a class="nav-link d-flex justify-content-between align-items-center {% if 'analytics' in request.endpoint or 'directory' in request.path or 'settings' in request.path %}active{% endif %}" 
+                   data-bs-toggle="collapse" href="#collapseAdmin" role="button" aria-expanded="{% if 'analytics' in request.endpoint or 'directory' in request.path or 'settings' in request.path %}true{% else %}false{% endif %}" aria-controls="collapseAdmin">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="bar-chart-3" size="20"></i> Analytique & Admin
+                    </div>
+                    <i data-lucide="chevron-down" size="14"></i>
+                </a>
+                <div class="collapse {% if 'analytics' in request.endpoint or 'directory' in request.path or 'settings' in request.path %}show{% endif %}" id="collapseAdmin">
+                    <div class="ps-4">
+                        <a class="nav-link py-2 {% if 'reports' in request.endpoint %}active{% endif %}" href="{{ url_for('analytics.reports') }}" style="font-size: 0.85rem;"> Rapports & Stats</a>
+                        {% if current_user.can_view_admin or current_user.role == 'Admin' %}
+                        <a class="nav-link py-2 {% if 'directory' in request.path %}active{% endif %}" href="{{ url_for('hr.directory') }}" style="font-size: 0.85rem;"> Annuaire & Paie</a>
+                        <a class="nav-link py-2 {% if 'settings' in request.path %}active{% endif %}" href="{{ url_for('inventory.settings') }}" style="font-size: 0.85rem;"> Paramètres</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
 
             <a class="nav-link {% if 'profile' in request.path %}active{% endif %}"
                 href="{{ url_for('auth.profile') }}">
@@ -220,7 +248,7 @@
             </a>
 
             <hr class="my-4 opacity-10">
-            <a class="nav-link text-info bg-info-subtle mb-2" href="https://wa.me/224610666659" target="_blank">
+            <a class="nav-link text-info bg-info-subtle mb-2 px-3 fw-bold" href="https://wa.me/224610666659" target="_blank">
                 <i data-lucide="message-circle" size="20"></i> Aide & Support
             </a>
             <a class="nav-link text-danger mt-auto mb-4" href="{{ url_for('auth.logout') }}">

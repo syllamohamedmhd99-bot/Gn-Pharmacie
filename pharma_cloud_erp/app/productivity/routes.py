@@ -79,3 +79,13 @@ def calendar():
     tasks = Task.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
     
     return render_template('productivity/calendar.html', shifts=shifts, leaves=leaves, tasks=tasks)
+
+@bp_productivity.route('/tasks/delete/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_task(id):
+    task = Task.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+    db.session.delete(task)
+    db.session.commit()
+    flash("Tâche supprimée avec succès.", "success")
+    return redirect(url_for('productivity.tasks'))

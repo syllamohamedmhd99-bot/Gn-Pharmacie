@@ -44,3 +44,15 @@ def view_customer(id):
     # Get last sales
     sales = Sale.query.filter_by(customer_id=id).order_by(Sale.timestamp.desc()).limit(10).all()
     return render_template('crm/view.html', customer=customer, sales=sales)
+
+@bp_crm.route('/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_customer(id):
+    customer = Customer.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+    if customer.sales:
+        flash("Impossible de supprimer un client ayant un historique d'achats.", "warning")
+    else:
+        db.session.delete(customer)
+        db.session.commit()
+        flash(f"Client {customer.name} supprimé avec succès.", "success")
+    return redirect(url_for('crm.index'))

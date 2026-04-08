@@ -424,3 +424,14 @@ def update_leave_status(id):
         flash(f"La demande de congé a été mise à jour : {new_status}.", "info")
     
     return redirect(url_for('hr.leaves'))
+
+@bp_hr.route('/leaves/delete/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_leave(id):
+    from app.models import LeaveRequest
+    leave = LeaveRequest.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+    db.session.delete(leave)
+    db.session.commit()
+    flash("Demande de congé supprimée.", "success")
+    return redirect(url_for('hr.leaves'))
