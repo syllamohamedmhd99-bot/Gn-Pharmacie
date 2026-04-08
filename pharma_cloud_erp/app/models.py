@@ -33,6 +33,11 @@ class Pharmacy(db.Model):
     sales = db.relationship('Sale', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
     suppliers = db.relationship('Supplier', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
     payments = db.relationship('SubscriptionRecord', backref='pharma', lazy=True, cascade="all, delete-orphan")
+    
+    # Nouveaux Modules
+    customers = db.relationship('Customer', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
+    tasks = db.relationship('Task', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
+    leaves = db.relationship('LeaveRequest', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
 
 # PILIER 1: Utilisateurs & RH
 class User(UserMixin, db.Model):
@@ -132,6 +137,7 @@ class Sale(db.Model):
     total_amount = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(50), nullable=False) # Cash, OrangeMoney, MTN
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)
     
     items = db.relationship('SaleItem', backref='sale', lazy=True, cascade="all, delete-orphan")
 
@@ -218,3 +224,48 @@ class SubscriptionRecord(db.Model):
 
     def __repr__(self):
         return f'<SubscriptionRecord {self.plan_name} for Pharma {self.pharmacy_id}>'
+
+# --- NOUVEAUX MODULES ERP ---
+
+class Customer(db.Model):
+    __tablename__ = 'customers'
+    id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    phone = db.Column(db.String(50), nullable=True)
+    email = db.Column(db.String(150), nullable=True)
+    address = db.Column(db.String(255), nullable=True)
+    loyalty_points = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sales = db.relationship('Sale', backref='customer', lazy=True)
+
+class Task(db.Model):
+    __tablename__ = 'tasks'
+    id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    due_date = db.Column(db.DateTime, nullable=True)
+    priority = db.Column(db.String(20), default='Normal') # Basse, Normal, Haute, Urgent
+    status = db.Column(db.String(20), default='A faire') # A faire, En cours, Terminé, Annulé
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    creator = db.relationship('User', foreign_keys=[created_by_id], backref='tasks_created')
+    assignee = db.relationship('User', foreign_keys=[assigned_to_id], backref='tasks_assigned')
+
+class LeaveRequest(db.Model):
+    __tablename__ = 'leave_requests'
+    id = db.Column(db.Integer, primary_key=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    leave_type = db.Column(db.String(50), nullable=False) # Congé, Maladie, Autre
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    reason = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='En attente') # En attente, Approuvé, Refusé
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='leave_requests')

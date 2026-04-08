@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Profil Client - PharmaCloud{% endblock %}
+
+{% block header %}Fiche Client{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Profil Sidebar -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-4 text-center h-100">
+            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold mx-auto mb-4" style="width: 80px; height: 80px; font-size: 2rem;">
+                {{ customer.name[0] | upper }}
+            </div>
+            <h3 class="fw-bold mb-1">{{ customer.name }}</h3>
+            <p class="text-muted small mb-4">Client fidèle depuis le {{ customer.created_at.strftime('%d/%m/%Y') }}</p>
+            
+            <div class="alert alert-warning border-0 rounded-4 p-3 mb-4 shadow-sm text-start" style="background-color: #fff9f0;">
+                <div class="text-muted x-small fw-bold mb-1 text-uppercase">Cagnotte de Fidélité</div>
+                <div class="h3 fw-bold text-warning mb-0"><i data-lucide="star" size="20"></i> {{ customer.loyalty_points }} <small class="h6">points</small></div>
+            </div>
+
+            <hr class="my-4 opacity-10">
+
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="text-muted x-small fw-bold text-uppercase d-block mb-1">Téléphone</label>
+                    <div class="fw-bold text-dark">{{ customer.phone or 'Non communiqué' }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted x-small fw-bold text-uppercase d-block mb-1">Email</label>
+                    <div class="fw-bold text-dark text-break">{{ customer.email or 'Non communiqué' }}</div>
+                </div>
+                <div class="mb-0">
+                    <label class="text-muted x-small fw-bold text-uppercase d-block mb-1">Adresse</label>
+                    <div class="fw-bold text-dark">{{ customer.address or 'Non communiqué' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100 p-4">
+            <h5 class="fw-bold mb-4">Derniers Achats</h5>
+            
+            {% if sales %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small fw-bold">
+                        <tr>
+                            <th>DATE</th>
+                            <th>MONTANT</th>
+                            <th>MÉTHODE</th>
+                            <th class="text-end">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td class="small">{{ sale.timestamp.strftime('%d/%m/%Y à %H:%M') }}</td>
+                            <td class="fw-bold text-dark">{{ "{:,.0f}".format(sale.total_amount).replace(',', ' ') }} GNF</td>
+                            <td>
+                                <span class="badge bg-light text-dark rounded-pill px-3">{{ sale.payment_method }}</span>
+                            </td>
+                            <td class="text-end">
+                                <a href="#" class="text-primary"><i data-lucide="external-link" size="16"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="shopping-bag" size="48" class="mb-3 opacity-25"></i>
+                <p>Aucun achat enregistré pour ce client.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{{ url_for('crm.index') }}" class="btn btn-dark rounded-pill px-4">
+        <i data-lucide="arrow-left" size="18" class="me-2"></i> Retour à la liste
+    </a>
+</div>
+
+<style>
+    .x-small { font-size: 0.75rem; }
+</style>
+{% endblock %}

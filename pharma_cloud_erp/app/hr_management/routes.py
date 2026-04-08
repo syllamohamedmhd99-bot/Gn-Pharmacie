@@ -362,3 +362,65 @@ def upload_photo(user_id):
         flash("La photo de profil a été mise à jour.", "success")
         
     return redirect(url_for('hr.directory'))
+
+@bp_hr.route('/leaves')
+@login_required
+def leaves():
+    from app.models import LeaveRequest, User
+    # Saas: Toutes les demandes pour MA pharmacie
+    requests = LeaveRequest.query.filter_by(pharmacy_id=current_user.pharmacy_id).order_by(LeaveRequest.created_at.desc()).all()
+    # Si c'est l'employé, il verra ses demandes. S'admin il verra tout
+    if current_user.role != 'Admin':
+        requests = [r for r in requests if r.user_id == current_user.id]
+        
+    return render_template('hr/leaves.html', requests=requests)
+
+@bp_hr.route('/leaves/request', methods=['POST'])
+@login_required
+def request_leave():
+    from app.models import LeaveRequest
+    leave_type = request.form.get('leave_type')
+    start_date_str = request.form.get('start_date')
+    end_date_str = request.form.get('end_date')
+    reason = request.form.get('reason')
+
+    if not leave_type or not start_date_str or not end_date_str:
+        flash("Tous les champs sont obligatoires.", "danger")
+        return redirect(url_for('hr.leaves'))
+
+    try:
+        from datetime import datetime
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        
+        new_leave = LeaveRequest(
+            user_id=current_user.id,
+            pharmacy_id=current_user.pharmacy_id,
+            leave_type=leave_type,
+            start_date=start_date,
+            end_date=end_date,
+            reason=reason,
+            status='En attente'
+        )
+        db.session.add(new_leave)
+        db.session.commit()
+        flash("Demande de congé transmise à l'administrateur.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de l'enregistrement : {str(e)}", "danger")
+
+    return redirect(url_for('hr.leaves'))
+
+@bp_hr.route('/leaves/update/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def update_leave_status(id):
+    from app.models import LeaveRequest
+    leave = LeaveRequest.query.filter_by(id=id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+    
+    new_status = request.form.get('status')
+    if new_status in ['Approuvé', 'Refusé']:
+        leave.status = new_status
+        db.session.commit()
+        flash(f"La demande de congé a été mise à jour : {new_status}.", "info")
+    
+    return redirect(url_for('hr.leaves'))

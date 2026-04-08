@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Rapports & Statistiques - PharmaCloud{% endblock %}
+
+{% block header %}Analyses & Rapports{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-4 text-center h-100">
+            <div class="text-muted x-small fw-bold mb-1 text-uppercase">Ventes (30 jours)</div>
+            <div class="display-6 fw-bold text-dark">{{ sales_count }}</div>
+            <div class="x-small text-success fw-bold mt-2"><i data-lucide="trending-up" size="14"></i> +12% vs mois dernier</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-4 text-center h-100 bg-primary text-white">
+            <div class="opacity-75 x-small fw-bold mb-1 text-uppercase">Chiffre d'Affaire (30j)</div>
+            <div class="display-6 fw-bold">{{ "{:,.0f}".format(revenue).replace(',', ' ') }} <small class="h6">GNF</small></div>
+            <div class="x-small fw-bold mt-2 opacity-75">Objectif atteint à 85%</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <h5 class="fw-bold mb-4">Top 5 Produits Vendus</h5>
+            <div class="list-group list-group-flush">
+                {% if top_medicines %}
+                {% for name, total in top_medicines %}
+                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center border-light">
+                    <div>
+                        <div class="fw-bold text-dark small">{{ name }}</div>
+                        <div class="x-small text-muted">Ventes directes</div>
+                    </div>
+                    <div class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ total }} unités</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted small">Données insuffisantes.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <h5 class="fw-bold mb-4">Performance Hebdomadaire</h5>
+            <!-- Simulation de Graphique placeholder -->
+            <div class="bg-light rounded-4 d-flex align-items-center justify-content-center" style="height: 250px;">
+                <div class="text-center opacity-25">
+                    <i data-lucide="bar-chart" size="48" class="mb-3"></i>
+                    <p class="small fw-bold">Graphique de tendance généré automatiquement</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small { font-size: 0.7rem; }
+</style>
+{% endblock %}

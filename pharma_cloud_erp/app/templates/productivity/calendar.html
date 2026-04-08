@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Calendrier Global - PharmaCloud{% endblock %}
+
+{% block header %}Calendrier de la Pharmacie{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Calendrier Principal -->
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Vue Plannings & Événements</h5>
+                <div class="btn-group shadow-sm rounded-pill p-1 bg-light">
+                    <button class="btn btn-sm btn-white active rounded-pill px-3">Mois</button>
+                    <button class="btn btn-sm btn-light rounded-pill px-3">Semaine</button>
+                </div>
+            </div>
+
+            <!-- Simulation de Calendrier Simple Grid -->
+            <div class="calendar-grid border rounded-4 overflow-hidden shadow-sm">
+                <div class="calendar-header bg-light border-bottom p-3">
+                    <div class="row text-center fw-bold small text-muted">
+                        <div class="col">LUN</div>
+                        <div class="col">MAR</div>
+                        <div class="col">MER</div>
+                        <div class="col">JEU</div>
+                        <div class="col">VEN</div>
+                        <div class="col">SAM</div>
+                        <div class="col">DIM</div>
+                    </div>
+                </div>
+                <div class="calendar-body p-2" style="background-color: white;">
+                    {% set days = range(1, 32) %}
+                    <div class="row g-2">
+                        {% for d in days %}
+                        <div class="col-1-7 border rounded-3 p-2 min-vh-15 position-relative hover-lift">
+                            <span class="small fw-bold text-muted">{{ d }}</span>
+                            <!-- Simulation Event -->
+                            {% if d == 15 %}
+                            <div class="badge bg-primary w-100 mt-2 small text-truncate">Garde Nuit</div>
+                            {% endif %}
+                            {% if d == 20 %}
+                            <div class="badge bg-success w-100 mt-2 small text-truncate">Livraison Pharma</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Légende & Stats -->
+    <div class="col-lg-3">
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <h6 class="fw-bold mb-4">Événements Aujourd'hui</h6>
+            <div class="list-group list-group-flush">
+                {% if tasks|selectattr('due_date', 'defined')|list|length > 0 %}
+                {% for t in tasks[:3] %}
+                <div class="list-group-item px-0 py-3 border-light">
+                    <div class="d-flex gap-2">
+                        <div class="bg-info rounded-pill" style="width: 4px; height: 32px;"></div>
+                        <div>
+                            <div class="fw-bold small">{{ t.title }}</div>
+                            <div class="x-small text-muted">{{ t.due_date.strftime('%H:%M') if t.due_date else '--:--' }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted small">Aucun événement prévu pour aujourd'hui.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm p-4">
+            <h6 class="fw-bold mb-4">Légende globale</h6>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex align-items-center gap-2 small">
+                    <div class="rounded-pill bg-primary" style="width: 12px; height: 12px;"></div>
+                    <span>Plannings de Garde</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 small">
+                    <div class="rounded-pill bg-success" style="width: 12px; height: 12px;"></div>
+                    <span>Tâches assignées</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 small">
+                    <div class="rounded-pill bg-warning" style="width: 12px; height: 12px;"></div>
+                    <span>Congés validés</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .col-1-7 { flex: 0 0 14.28%; max-width: 14.28%; }
+    .min-vh-15 { min-height: 120px; }
+    .hover-lift:hover { background-color: #f8fafc; cursor: pointer; transition: 0.2s; }
+    .x-small { font-size: 0.7rem; }
+    @media (max-width: 768px) {
+        .col-1-7 { flex: 0 0 25%; max-width: 25%; }
+    }
+</style>
+{% endblock %}

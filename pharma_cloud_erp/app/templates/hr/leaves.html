@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Congés - PharmaCloud{% endblock %}
+
+{% block header %}Gestion des Congés{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-muted mb-0">Demandes de congés, absences et maladies.</p>
+    </div>
+    <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#requestLeaveModal">
+        <i data-lucide="calendar-plus" size="18" class="me-2"></i> Nouvelle Demande
+    </button>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-4 text-center">
+            <div class="text-muted x-small fw-bold mb-1 text-uppercase">En Attente</div>
+            <div class="h3 fw-bold text-warning">{{ requests|selectattr('status', 'equalto', 'En attente')|list|length }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-4 text-center">
+            <div class="text-muted x-small fw-bold mb-1 text-uppercase">Approuvées</div>
+            <div class="h3 fw-bold text-success">{{ requests|selectattr('status', 'equalto', 'Approuvé')|list|length }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small fw-bold">
+                <tr>
+                    <th class="ps-4">EMPLOYÉ</th>
+                    <th>TYPE</th>
+                    <th>PÉRIODE</th>
+                    <th>STATUT</th>
+                    <th class="text-end pe-4">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if requests %}
+                {% for r in requests %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center gap-2">
+                             <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.7rem;">
+                                {{ r.user.first_name[0] }}{{ r.user.last_name[0] }}
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark small">{{ r.user.first_name }} {{ r.user.last_name }}</div>
+                                <div class="x-small text-muted">{{ r.user.role }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark rounded-pill px-3">{{ r.leave_type }}</span>
+                    </td>
+                    <td>
+                        <div class="small fw-bold text-dark">Du {{ r.start_date.strftime('%d/%m/%Y') }}</div>
+                        <div class="x-small text-muted">au {{ r.end_date.strftime('%d/%m/%Y') }}</div>
+                    </td>
+                    <td>
+                        <span class="badge {% if r.status == 'Approuvé' %}bg-success{% elif r.status == 'Refusé' %}bg-danger{% else %}bg-warning{% endif %} rounded-pill px-3">
+                            {{ r.status }}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        {% if current_user.role == 'Admin' and r.status == 'En attente' %}
+                        <div class="d-flex gap-2 justify-content-end">
+                            <form action="{{ url_for('hr.update_leave_status', id=r.id) }}" method="POST">
+                                <input type="hidden" name="status" value="Approuvé">
+                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">Valider</button>
+                            </form>
+                            <form action="{{ url_for('hr.update_leave_status', id=r.id) }}" method="POST">
+                                <input type="hidden" name="status" value="Refusé">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Refuser</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span class="text-muted small italic">Aucune action</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">Aucune demande de congé enregistrée.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Demande -->
+<div class="modal fade" id="requestLeaveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <form action="{{ url_for('hr.request_leave') }}" method="POST">
+                <div class="modal-header border-0 p-4 pb-0">
+                    <h5 class="fw-bold mb-0">Demande de Congé</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">TYPE DE CONGÉ</label>
+                        <select name="leave_type" class="form-select rounded-3" required>
+                            <option value="Congé Annuel">Congé Annuel</option>
+                            <option value="Maladie">Maladie</option>
+                            <option value="Maternité/Paternité">Maternité/Paternité</option>
+                            <option value="Absence Exceptionnelle">Absence Exceptionnelle</option>
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">DATE DÉBUT</label>
+                            <input type="date" name="start_date" class="form-control rounded-3" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">DATE FIN</label>
+                            <input type="date" name="end_date" class="form-control rounded-3" required>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">MOTIF / JUSTIFICATIF</label>
+                        <textarea name="reason" class="form-control rounded-3" rows="3" placeholder="Pourquoi demandez-vous ce congé ?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-3 fw-bold shadow-sm">TRANSMETTRE LA DEMANDE</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small { font-size: 0.7rem; }
+</style>
+{% endblock %}

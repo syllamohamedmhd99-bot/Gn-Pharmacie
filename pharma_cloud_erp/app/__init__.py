@@ -16,12 +16,16 @@ def create_app(config_name='default'):
     migrate.init_app(app, db)
     
     @app.context_processor
-    def inject_saas_stats():
+    def inject_global_vars():
         from app.models import Pharmacy
+        now = datetime.utcnow()
+        pending_count = 0
         if current_user.is_authenticated and current_user.is_super_admin:
-            pending_count = Pharmacy.query.filter_by(is_active=False).count()
-            return {'pending_count': pending_count, 'now': datetime.utcnow()}
-        return {'pending_count': 0, 'now': datetime.utcnow()}
+            try:
+                pending_count = Pharmacy.query.filter_by(is_active=False).count()
+            except:
+                pass
+        return {'pending_count': pending_count, 'now': now}
 
     login_manager.init_app(app)
     mail.init_app(app)
@@ -33,11 +37,17 @@ def create_app(config_name='default'):
     from app.inventory_fefo.routes import bp_inventory
     from app.pos_sales.routes import bp_pos
     from app.auth.routes import bp_auth
+    from app.crm.routes import bp_crm
+    from app.productivity.routes import bp_productivity
+    from app.analytics.routes import bp_analytics
 
     app.register_blueprint(bp_hr, url_prefix='/hr')
     app.register_blueprint(bp_inventory, url_prefix='/inventory')
     app.register_blueprint(bp_pos, url_prefix='/pos')
     app.register_blueprint(bp_auth, url_prefix='/auth')
+    app.register_blueprint(bp_crm, url_prefix='/crm')
+    app.register_blueprint(bp_productivity, url_prefix='/productivity')
+    app.register_blueprint(bp_analytics, url_prefix='/analytics')
 
     @app.route('/test')
     def test_direct():
@@ -94,8 +104,10 @@ def create_app(config_name='default'):
             # 2. Migration SQL Manuelle
             diagnostic_log.append("Migration is_super_admin...")
             db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE;"))
+            diagnostic_log.append("Migration customer_id in sales...")
+            db.session.execute(text("ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);"))
             db.session.commit()
-            diagnostic_log.append("Migration OK.")
+            diagnostic_log.append("Migrations OK.")
             
             # 3. Initialisation des Plans de Tarification si vides
             if SubscriptionPlan.query.count() == 0:
@@ -148,14 +160,30 @@ def create_app(config_name='default'):
             admin.set_password('admin123') # Reset temporaire pour débloquer
             db.session.add(admin)
             
+            # 6. Échantillon de Données ERP (CRM & Tâches)
+            from app.models import Customer, Task
+            if Customer.query.filter_by(pharmacy_id=default_pharma.id).count() == 0:
+                c1 = Customer(name="Moussa Diallo", phone="620112233", loyalty_points=150, pharmacy_id=default_pharma.id)
+                c2 = Customer(name="Aissatou Barry", phone="621445566", loyalty_points=50, pharmacy_id=default_pharma.id)
+                db.session.add_all([c1, c2])
+            
+            if Task.query.filter_by(pharmacy_id=default_pharma.id).count() == 0:
+                t1 = Task(title="Inventaire Rayon Alpha", description="Vérifier les dates d'expiration au rayon A", 
+                          priority="Haute", status="A faire", 
+                          created_by_id=admin.id, pharmacy_id=default_pharma.id)
+                db.session.add(t1)
+
             db.session.commit()
-            diagnostic_log.append("Admin (ID: {} / Active: {}) OK.".format(admin.id, admin.is_active))
+            diagnostic_log.append("Données de test ERP (CRM, Tâches) OK.")
+
             return f"<h1>Succès de l'Activation !</h1><p>{' <br> '.join(diagnostic_log)}</p><a href='/'>Aller à l'accueil pour se connecter (Mot de passe: admin123)</a>"
 
         except Exception as e:
             db.session.rollback()
             import traceback
             error_details = traceback.format_exc()
+            return f"<h1>Erreur Critique de Initialisation</h1><pre>{str(e)}</pre><h3>Détails :</h3><pre>{error_details}</pre>"
+
             return f"<h1>Erreur Critique de Initialisation</h1><pre>{str(e)}</pre><h3>Détails :</h3><pre>{error_details}</pre>"
 
     # Route Super-Admin (Gestion Globale du SaaS)
@@ -208,12 +236,15 @@ def create_app(config_name='default'):
                                    pharma_stats=pharma_stats,
                                    plans=SubscriptionPlan.query.filter_by(is_active=True).all())
         except Exception as e:
+            db.session.rollback()
             flash(f"Erreur d'accès Dashboard : {str(e)}", "danger")
-            # Version de secours sans stats si ça échoue
             return render_template('superadmin/dashboard.html', 
-                                   pharmacies=Pharmacy.query.all(),
+                                   pharmacies=[],
                                    total_global_revenue=0,
-                                   pharma_stats=[])
+                                   total_saas_revenue=0,
+                                   monthly_saas_revenue=0,
+                                   pharma_stats=[],
+                                   plans=[])
 
     @app.before_request
     def check_subscription():
