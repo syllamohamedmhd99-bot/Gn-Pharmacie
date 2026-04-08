@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.extensions import db
-from app.models import Sale, SaleItem, Medicine, User
+from app.models import Sale, SaleItem, Medicine, User, Batch
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
@@ -18,9 +18,10 @@ def reports():
     sales_count = Sale.query.filter(Sale.pharmacy_id == pharmacy_id, Sale.timestamp >= thirty_days_ago).count()
     revenue = db.session.query(func.sum(Sale.total_amount)).filter(Sale.pharmacy_id == pharmacy_id, Sale.timestamp >= thirty_days_ago).scalar() or 0
     
-    # Top Médicaments
+    # Top Médicaments (Jointure corrigée via Batch)
     top_medicines = db.session.query(Medicine.name, func.sum(SaleItem.quantity).label('total'))\
-        .join(SaleItem, Medicine.id == SaleItem.medicine_id)\
+        .join(Batch, Medicine.id == Batch.medicine_id)\
+        .join(SaleItem, Batch.id == SaleItem.batch_id)\
         .join(Sale, Sale.id == SaleItem.sale_id)\
         .filter(Sale.pharmacy_id == pharmacy_id)\
         .group_by(Medicine.name)\
