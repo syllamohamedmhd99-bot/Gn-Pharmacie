@@ -35,7 +35,7 @@
     <div class="col-md-4">
         <div class="card p-4 shadow-sm border-0">
             <div class="text-muted small fw-bold mb-1">VALEUR DU STOCK BONS LOTS</div>
-            <div class="h2 fw-bold mb-0 text-success">{{ "{:,.0f}".format(total_value) }} <small
+            <div class="h2 fw-bold mb-0 text-success">{{ "{:,.0f}".format(total_value|default(0)).replace(',', ' ') }} <small
                     class="fs-6 text-muted">GNF</small></div>
             <p class="small mt-2 mb-0 text-muted">Prix d'achat (estimatif base)</p>
         </div>
@@ -74,7 +74,7 @@
                                     class="text-danger ms-1" style="width: 14px;" title="Stock Faible"></i>
                                     {% endif %}
                             </td>
-                            <td>{{ "{:,.0f}".format(med.default_price) }}</td>
+                            <td>{{ "{:,.0f}".format(med.default_price|default(0)).replace(',', ' ') }}</td>
                             <td class="text-end">
                                 <form action="{{ url_for('inventory.delete_medicine', id=med.id) }}" method="POST"
                                     class="d-inline"
@@ -236,7 +236,7 @@
                         <select name="medicine_id" class="form-select" required>
                             <option value="">Choisir un produit...</option>
                             {% for med in medicines %}
-                            <option value="{{ med.id }}">{{ med.name }} - {{ "{:,.0f}".format(med.default_price) }} GNF
+                            <option value="{{ med.id }}">{{ med.name }} - {{ "{:,.0f}".format(med.default_price|default(0)).replace(',', ' ') }} GNF
                             </option>
                             {% endfor %}
                         </select>

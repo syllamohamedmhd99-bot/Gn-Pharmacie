@@ -50,7 +50,7 @@
                 </div>
                 <span class="badge bg-success-subtle text-success rounded-pill px-3">Revenus</span>
             </div>
-            <div class="h2 fw-bold mb-1">{{ "{:,.0f}".format(total_revenue) }} <small class="fs-6">GNF</small></div>
+            <div class="h2 fw-bold mb-1">{{ "{:,.0f}".format(total_revenue|default(0)).replace(',', ' ') }} <small class="fs-6">GNF</small></div>
             <div class="text-muted small fw-medium">Chiffre d'Affaires</div>
         </div>
     </div>
