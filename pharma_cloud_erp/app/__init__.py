@@ -145,7 +145,7 @@ def create_app(config_name='default'):
                 res_pharma = db.session.execute(text("SELECT id FROM pharmacies LIMIT 1"))
                 pharma_id = res_pharma.scalar()
                 if not pharma_id:
-                    db.session.execute(text("INSERT INTO pharmacies (name, is_active) VALUES ('Ma Pharmacie', 1)"))
+                    db.session.execute(text("INSERT INTO pharmacies (name, is_active) VALUES ('Ma Pharmacie', TRUE)"))
                     db.session.commit()
                     pharma_id = db.session.execute(text("SELECT id FROM pharmacies LIMIT 1")).scalar()
                 
@@ -154,12 +154,12 @@ def create_app(config_name='default'):
                 pass_hash = "pbkdf2:sha256:600000$p6G6g2... (hash-placeholder)" 
                 db.session.execute(text("""
                     INSERT INTO users (email, password_hash, role, pharmacy_id, is_active, is_super_admin, can_view_pos, can_view_inventory, can_view_hr, can_view_admin)
-                    VALUES (:email, :pwd, 'Admin', :pid, 1, 1, 1, 1, 1, 1)
+                    VALUES (:email, :pwd, 'Admin', :pid, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
                 """), {"email": admin_email, "pwd": pass_hash, "pid": pharma_id})
                 db.session.commit()
                 diagnostic_log.append("Compte Admin créé.")
             else:
-                db.session.execute(text("UPDATE users SET is_super_admin = 1, is_active = 1 WHERE email = :email"), {"email": admin_email})
+                db.session.execute(text("UPDATE users SET is_super_admin = TRUE, is_active = TRUE WHERE email = :email"), {"email": admin_email})
                 db.session.commit()
                 diagnostic_log.append("Compte Admin mis à jour.")
             
