@@ -111,9 +111,16 @@ def create_app(config_name='default'):
             # 4. Création de la Pharmacie par défaut
             default_pharma = Pharmacy.query.filter_by(name='Pharmacie de Démonstration').first()
             if not default_pharma:
-                default_pharma = Pharmacy(name='Pharmacie de Démonstration', address='Conakry, Guinée', license_number='DEMO-001')
+                default_pharma = Pharmacy(
+                    name='Pharmacie de Démonstration', 
+                    address='Conakry, Guinée', 
+                    license_number='DEMO-001',
+                    is_active=True # Force l'activation
+                )
                 db.session.add(default_pharma)
                 db.session.flush()
+            else:
+                default_pharma.is_active = True # Sécurité activation
 
             # 5. Gestion de l'Admin SaaS
             admin_email = 'syllamohamedmhd99@gmail.com'
@@ -130,15 +137,17 @@ def create_app(config_name='default'):
                     can_view_hr=True,
                     can_view_admin=True
                 )
-                admin.set_password('admin123')
-                db.session.add(admin)
             else:
                 admin.is_super_admin = True
+                admin.is_active = True # Force activation
                 if not admin.pharmacy_id: admin.pharmacy_id = default_pharma.id
             
+            admin.set_password('admin123') # Reset temporaire pour débloquer
+            db.session.add(admin)
+            
             db.session.commit()
-            diagnostic_log.append("Admin/Exploitation OK.")
-            return f"<h1>Succès !</h1><p>{' <br> '.join(diagnostic_log)}</p><a href='/'>Aller à l'accueil</a>"
+            diagnostic_log.append("Admin (ID: {} / Active: {}) OK.".format(admin.id, admin.is_active))
+            return f"<h1>Succès de l'Activation !</h1><p>{' <br> '.join(diagnostic_log)}</p><a href='/'>Aller à l'accueil pour se connecter (Mot de passe: admin123)</a>"
 
         except Exception as e:
             db.session.rollback()
