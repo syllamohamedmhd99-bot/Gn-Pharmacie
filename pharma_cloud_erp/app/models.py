@@ -5,7 +5,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except Exception:
+        # En cas de colonne manquante (migration en cours), on déconnecte au lieu de 500
+        return None
 
 # PILIER 0: Multi-Tenancy (SaaS)
 class Pharmacy(db.Model):
