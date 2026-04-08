@@ -11,13 +11,23 @@ class Config:
     # SQLALCHEMY Configuration
     db_url = os.environ.get('DATABASE_URL')
     if db_url and db_url.strip():
-        # Transformation postgres -> postgresql (requis par SQLAlchemy)
+        # Transformation postgres -> postgresql
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
-            
-        # Nettoyage ultra-robuste des query params (?pgbouncer=true...)
-        # On coupe juste après le '?' si il existe, sans toucher au reste de l'URL
-        SQLALCHEMY_DATABASE_URI = db_url.split('?')[0]
+
+        # Nettoyage ultra-robuste des query params
+        base_url = db_url.split('?')[0]
+        
+        # Support des mots de passe avec des @
+        if "@" in base_url and "://" in base_url:
+            protocol, rest = base_url.split("://", 1)
+            if "@" in rest:
+                creds, host = rest.rsplit("@", 1)
+                SQLALCHEMY_DATABASE_URI = f"{protocol}://{creds}@{host}"
+            else:
+                SQLALCHEMY_DATABASE_URI = base_url
+        else:
+            SQLALCHEMY_DATABASE_URI = base_url
     else:
         SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
     
