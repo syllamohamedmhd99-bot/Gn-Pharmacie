@@ -61,6 +61,9 @@ class User(UserMixin, db.Model):
     can_view_pos = db.Column(db.Boolean, default=True)
     can_view_inventory = db.Column(db.Boolean, default=False)
     can_view_hr = db.Column(db.Boolean, default=True)
+    can_view_crm = db.Column(db.Boolean, default=False)
+    can_view_tasks = db.Column(db.Boolean, default=False)
+    can_view_analytics = db.Column(db.Boolean, default=False)
     can_view_admin = db.Column(db.Boolean, default=False)
     is_super_admin = db.Column(db.Boolean, default=False)
     

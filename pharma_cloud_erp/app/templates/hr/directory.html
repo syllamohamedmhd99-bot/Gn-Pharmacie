@@ -171,6 +171,21 @@
                                                     id="hr{{ u.id }}" {% if u.can_view_hr %}checked{% endif %}>
                                                 <label class="form-check-label" for="hr{{ u.id }}">RH & Planning</label>
                                             </div>
+                                            <div class="form-check form-switch mb-3 text-primary">
+                                                <input class="form-check-input" type="checkbox" name="can_view_crm"
+                                                    id="crm{{ u.id }}" {% if u.can_view_crm %}checked{% endif %}>
+                                                <label class="form-check-label fw-bold" for="crm{{ u.id }}">Gestion Clientèle (CRM)</label>
+                                            </div>
+                                            <div class="form-check form-switch mb-3 text-info">
+                                                <input class="form-check-input" type="checkbox" name="can_view_tasks"
+                                                    id="tsk{{ u.id }}" {% if u.can_view_tasks %}checked{% endif %}>
+                                                <label class="form-check-label fw-bold" for="tsk{{ u.id }}">Tâches & Missions</label>
+                                            </div>
+                                            <div class="form-check form-switch mb-3 text-success">
+                                                <input class="form-check-input" type="checkbox" name="can_view_analytics"
+                                                    id="ana{{ u.id }}" {% if u.can_view_analytics %}checked{% endif %}>
+                                                <label class="form-check-label fw-bold" for="ana{{ u.id }}">Rapports & Stats</label>
+                                            </div>
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" name="can_view_admin"
                                                     id="adm{{ u.id }}" {% if u.can_view_admin %}checked{% endif %}>

@@ -151,6 +151,9 @@ def update_permissions(user_id):
     user.can_view_pos = 'can_view_pos' in request.form
     user.can_view_inventory = 'can_view_inventory' in request.form
     user.can_view_hr = 'can_view_hr' in request.form
+    user.can_view_crm = 'can_view_crm' in request.form
+    user.can_view_tasks = 'can_view_tasks' in request.form
+    user.can_view_analytics = 'can_view_analytics' in request.form
     user.can_view_admin = 'can_view_admin' in request.form
     
     db.session.commit()

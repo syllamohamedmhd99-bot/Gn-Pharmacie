@@ -106,6 +106,13 @@ def create_app(config_name='default'):
             db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE;"))
             diagnostic_log.append("Migration customer_id in sales...")
             db.session.execute(text("ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id);"))
+            
+            # Nouvelles permissions modules
+            diagnostic_log.append("Migration nouvelles permissions...")
+            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_view_crm BOOLEAN DEFAULT FALSE;"))
+            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_view_tasks BOOLEAN DEFAULT FALSE;"))
+            db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS can_view_analytics BOOLEAN DEFAULT FALSE;"))
+            
             db.session.commit()
             diagnostic_log.append("Migrations OK.")
             

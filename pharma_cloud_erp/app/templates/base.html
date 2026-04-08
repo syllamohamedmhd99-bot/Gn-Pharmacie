@@ -178,7 +178,9 @@
                         {% if current_user.can_view_pos or current_user.role == 'Admin' %}
                         <a class="nav-link py-2 {% if 'pos' in request.endpoint %}active{% endif %}" href="{{ url_for('pos.terminal') }}" style="font-size: 0.85rem;"> Terminal POS</a>
                         {% endif %}
+                        {% if current_user.can_view_crm or current_user.role == 'Admin' %}
                         <a class="nav-link py-2 {% if 'crm' in request.endpoint %}active{% endif %}" href="{{ url_for('crm.index') }}" style="font-size: 0.85rem;"> Clientèle (CRM)</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -215,6 +217,9 @@
                         {% if current_user.can_view_hr or current_user.role == 'Admin' %}
                         <a class="nav-link py-2 {% if 'hr' in request.path and 'directory' not in request.path and 'leaves' not in request.path %}active{% endif %}" href="{{ url_for('hr.dashboard') }}" style="font-size: 0.85rem;"> Plannings</a>
                         <a class="nav-link py-2 {% if 'leaves' in request.path %}active{% endif %}" href="{{ url_for('hr.leaves') }}" style="font-size: 0.85rem;"> Gestion Congés</a>
+                        {% endif %}
+                        
+                        {% if current_user.can_view_tasks or current_user.role == 'Admin' %}
                         <a class="nav-link py-2 {% if 'calendar' in request.endpoint %}active{% endif %}" href="{{ url_for('productivity.calendar') }}" style="font-size: 0.85rem;"> Mon Calendrier</a>
                         <a class="nav-link py-2 {% if 'tasks' in request.endpoint %}active{% endif %}" href="{{ url_for('productivity.tasks') }}" style="font-size: 0.85rem;"> Tâches & Missions</a>
                         {% endif %}
@@ -233,7 +238,9 @@
                 </a>
                 <div class="collapse {% if 'analytics' in request.endpoint or 'directory' in request.path or 'settings' in request.path %}show{% endif %}" id="collapseAdmin">
                     <div class="ps-4">
+                        {% if current_user.can_view_analytics or current_user.role == 'Admin' %}
                         <a class="nav-link py-2 {% if 'reports' in request.endpoint %}active{% endif %}" href="{{ url_for('analytics.reports') }}" style="font-size: 0.85rem;"> Rapports & Stats</a>
+                        {% endif %}
                         {% if current_user.can_view_admin or current_user.role == 'Admin' %}
                         <a class="nav-link py-2 {% if 'directory' in request.path %}active{% endif %}" href="{{ url_for('hr.directory') }}" style="font-size: 0.85rem;"> Annuaire & Paie</a>
                         <a class="nav-link py-2 {% if 'settings' in request.path %}active{% endif %}" href="{{ url_for('inventory.settings') }}" style="font-size: 0.85rem;"> Paramètres</a>
