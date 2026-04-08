@@ -16,9 +16,12 @@ def create_app(config_name='default'):
     migrate.init_app(app, db)
     
     @app.context_processor
-    def inject_now():
-        from datetime import datetime
-        return {'now': datetime.utcnow()}
+    def inject_saas_stats():
+        from app.models import Pharmacy
+        if current_user.is_authenticated and current_user.is_super_admin:
+            pending_count = Pharmacy.query.filter_by(is_active=False).count()
+            return {'pending_count': pending_count, 'now': datetime.utcnow()}
+        return {'pending_count': 0, 'now': datetime.utcnow()}
 
     login_manager.init_app(app)
     mail.init_app(app)
@@ -166,14 +169,20 @@ def create_app(config_name='default'):
             
         try:
             pharmacies = Pharmacy.query.all()
-            
-            # ANALYTICS SAAS
             from sqlalchemy import func
-            # On s'assure d'importer Sale ici par sécurité
-            from app.models import Sale
+            from app.models import Sale, SubscriptionRecord
             
+            # 1. Revenus Globaux (Ventes des pharmacies)
             total_global_revenue = db.session.query(func.sum(Sale.total_amount)).scalar() or 0
             
+            # 2. Revenus SaaS (Abonnements payés à Mohamed)
+            total_saas_revenue = db.session.query(func.sum(SubscriptionRecord.amount)).scalar() or 0
+            
+            # 3. Chiffre d'Affaires SaaS ce mois-ci
+            first_day_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            monthly_saas_revenue = db.session.query(func.sum(SubscriptionRecord.amount))\
+                .filter(SubscriptionRecord.timestamp >= first_day_month).scalar() or 0
+
             # Optimisation: Répartition par pharmacie (Top Performance)
             pharma_stats = []
             revenue_by_pharma = db.session.query(
@@ -194,9 +203,10 @@ def create_app(config_name='default'):
             return render_template('superadmin/dashboard.html', 
                                    pharmacies=pharmacies,
                                    total_global_revenue=total_global_revenue,
+                                   total_saas_revenue=total_saas_revenue,
+                                   monthly_saas_revenue=monthly_saas_revenue,
                                    pharma_stats=pharma_stats,
-                                   plans=SubscriptionPlan.query.filter_by(is_active=True).all(),
-                                   now=datetime.utcnow())
+                                   plans=SubscriptionPlan.query.filter_by(is_active=True).all())
         except Exception as e:
             flash(f"Erreur d'accès Dashboard : {str(e)}", "danger")
             # Version de secours sans stats si ça échoue
