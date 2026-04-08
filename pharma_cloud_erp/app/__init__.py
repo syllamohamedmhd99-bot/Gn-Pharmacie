@@ -164,26 +164,35 @@ def create_app(config_name='default'):
                 diagnostic_log.append("Compte Admin mis à jour.")
             
             # 6. Échantillon de Données ERP (CRM & Tâches)
-            from app.models import Customer, Task
-            res_p = db.session.execute(text("SELECT id FROM pharmacies LIMIT 1"))
-            pharma_id = res_p.scalar()
+            from app.models import Customer, Task, SubscriptionRecord
+            res_all_p = db.session.execute(text("SELECT id FROM pharmacies"))
+            all_pharmacy_ids = [r[0] for r in res_all_p.fetchall()]
             
-            if pharma_id and Customer.query.filter_by(pharmacy_id=pharma_id).count() == 0:
-                c1 = Customer(name="Moussa Diallo", phone="620112233", loyalty_points=150, pharmacy_id=pharma_id)
-                c2 = Customer(name="Aissatou Barry", phone="621445566", loyalty_points=50, pharmacy_id=pharma_id)
-                db.session.add_all([c1, c2])
-            
-            if pharma_id and Task.query.filter_by(pharmacy_id=pharma_id).count() == 0:
-                # On utilise l'admin_id récupéré au point 5
-                t1 = Task(title="Inventaire Rayon Alpha", description="Vérifier les dates d'expiration au rayon A", 
-                          priority="Haute", status="A faire", 
-                          created_by_id=admin_id, pharmacy_id=pharma_id)
-                db.session.add(t1)
+            for pid in all_pharmacy_ids:
+                # Créer un paiement de test si aucun n'existe pour cette pharma
+                res_rec = db.session.execute(text("SELECT count(*) FROM subscription_records WHERE pharmacy_id = :pid"), {"pid": pid})
+                if res_rec.scalar() == 0:
+                    db.session.execute(text("""
+                        INSERT INTO subscription_records (pharmacy_id, plan_name, amount, timestamp)
+                        VALUES (:pid, 'Annuel', 950000, CURRENT_TIMESTAMP)
+                    """), {"pid": pid})
+                    diagnostic_log.append(f"Paiement fictif ajouté pour Pharma ID {pid}.")
+
+                if Customer.query.filter_by(pharmacy_id=pid).count() == 0:
+                    c1 = Customer(name="Moussa Diallo", phone="620112233", loyalty_points=150, pharmacy_id=pid)
+                    c2 = Customer(name="Aissatou Barry", phone="621445566", loyalty_points=50, pharmacy_id=pid)
+                    db.session.add_all([c1, c2])
+                
+                if Task.query.filter_by(pharmacy_id=pid).count() == 0:
+                    t1 = Task(title="Inventaire Rayon Alpha", description="Vérifier les dates d'expiration au rayon A", 
+                              priority="Haute", status="A faire", 
+                              created_by_id=admin_id, pharmacy_id=pid)
+                    db.session.add(t1)
 
             db.session.commit()
-            diagnostic_log.append("Données de test ERP (CRM, Tâches) OK.")
+            diagnostic_log.append("Données de test complètes (Paiements, CRM, Tâches) OK.")
 
-            return f"<h1>Succès de l'Activation !</h1><p>{' <br> '.join(diagnostic_log)}</p><a href='/'>Aller à l'accueil pour se connecter (Mot de passe: admin123)</a>"
+            return f"<h1>Succès de l'Activation !</h1><p>{' <br> '.join(diagnostic_log)}</p><a href='/superadmin'>Aller au SaaS Control Center (Vérifier les revenus)</a>"
 
         except Exception as e:
             db.session.rollback()
