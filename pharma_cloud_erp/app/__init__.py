@@ -83,16 +83,16 @@ def create_app(config_name='default'):
             db.session.execute(text("SELECT 1"))
             diagnostic_log.append("Connexion OK.")
 
-            # 1. Migration SQL Manuelle
+            # 1. Création des tables
+            diagnostic_log.append("Création des tables manquantes...")
+            db.create_all()
+            diagnostic_log.append("Tables OK.")
+
+            # 2. Migration SQL Manuelle
             diagnostic_log.append("Migration is_super_admin...")
             db.session.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE;"))
             db.session.commit()
             diagnostic_log.append("Migration OK.")
-
-            # 2. Création des tables
-            diagnostic_log.append("Création des tables manquantes...")
-            db.create_all()
-            diagnostic_log.append("Tables OK.")
             
             # 3. Initialisation des Plans de Tarification si vides
             if SubscriptionPlan.query.count() == 0:
