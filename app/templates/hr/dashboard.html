@@ -45,6 +45,7 @@
                             <th>Date prévue</th>
                             <th>Horaires</th>
                             <th>Statut</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -64,6 +65,15 @@
                             </td>
                             <td><span
                                     class="badge bg-success-subtle text-success border border-success-subtle">Planifié</span>
+                            </td>
+                            <td>
+                                {% if current_user.role == 'Admin' %}
+                                <form action="{{ url_for('hr.delete_shift', shift_id=shift.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirmer la suppression ?')">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0 p-1 rounded-circle" title="Supprimer">
+                                        <i data-lucide="trash-2" style="width: 16px;"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}

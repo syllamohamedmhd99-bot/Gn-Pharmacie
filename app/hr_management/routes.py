@@ -278,23 +278,53 @@ def timeclock():
     return redirect(url_for('hr.dashboard'))
 
 @bp_hr.route('/shift/add', methods=['POST'])
+@login_required
+@permission_required('can_view_hr')
 def add_shift():
-    user_id = 1 # Simulation
+    user_id = request.form.get('user_id')
     date_str = request.form.get('date')
     start_time_str = request.form.get('start_time')
     end_time_str = request.form.get('end_time')
     
-    if date_str and start_time_str and end_time_str:
-        from datetime import datetime
+    if not all([user_id, date_str, start_time_str, end_time_str]):
+        flash("Tous les champs sont obligatoires.", "warning")
+        return redirect(url_for('hr.dashboard'))
+
+    try:
+        # Récupérer l'employé pour garantir la bonne pharmacy_id
+        employee = User.query.get(int(user_id))
+        if not employee:
+            flash("Employé introuvable.", "danger")
+            return redirect(url_for('hr.dashboard'))
+            
         d = datetime.strptime(date_str, '%Y-%m-%d').date()
         st = datetime.strptime(start_time_str, '%H:%M').time()
         et = datetime.strptime(end_time_str, '%H:%M').time()
         
-        shift = Shift(user_id=user_id, date=d, start_time=st, end_time=et)
+        shift = Shift(
+            user_id=employee.id, 
+            pharmacy_id=employee.pharmacy_id,
+            date=d, 
+            start_time=st, 
+            end_time=et
+        )
         db.session.add(shift)
         db.session.commit()
-        flash("Planning ajouté avec succès", "success")
-        
+        flash(f"Shift planifié avec succès pour {employee.first_name}.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur technique : {str(e)}", "danger")
+            
+    return redirect(url_for('hr.dashboard'))
+
+@bp_hr.route('/shift/delete/<int:shift_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_shift(shift_id):
+    shift = Shift.query.filter_by(id=shift_id, pharmacy_id=current_user.pharmacy_id).first_or_404()
+    db.session.delete(shift)
+    db.session.commit()
+    flash("Shift supprimé avec succès.", "success")
     return redirect(url_for('hr.dashboard'))
 
 @bp_hr.route('/employee/advance/add/<int:user_id>', methods=['POST'])

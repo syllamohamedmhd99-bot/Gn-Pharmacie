@@ -59,7 +59,7 @@ class Pharmacy(db.Model):
     subscription_plan = db.Column(db.String(50), default='Essai') # Essai, Mensuel, Trimestriel, Semestriel, Annuel
     subscription_end_date = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_active = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=False, index=True)
 
     # Relationships
     users = db.relationship('User', backref='pharmacy', lazy=True, cascade="all, delete-orphan")
@@ -77,7 +77,7 @@ class Pharmacy(db.Model):
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(50), nullable=False) # Admin, Pharmacien, Caissier
@@ -115,7 +115,7 @@ class User(UserMixin, db.Model):
 class Medicine(db.Model):
     __tablename__ = 'medicines'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     name = db.Column(db.String(150), nullable=False)
     barcode = db.Column(db.String(100), nullable=True) # Not unique globally in SaaS
     purchase_price = db.Column(db.Float, default=0.0)
@@ -135,16 +135,16 @@ class Medicine(db.Model):
 class Batch(db.Model):
     __tablename__ = 'batches'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     medicine_id = db.Column(db.Integer, db.ForeignKey('medicines.id'), nullable=False)
     batch_number = db.Column(db.String(50), nullable=False)
-    expiry_date = db.Column(db.Date, nullable=False) # CRITICAL FOR FEFO
+    expiry_date = db.Column(db.Date, nullable=False, index=True) # CRITICAL FOR FEFO
     quantity = db.Column(db.Integer, nullable=False, default=0)
 
 class Supplier(db.Model):
     __tablename__ = 'suppliers'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), nullable=False)
     phone = db.Column(db.String(50), nullable=True)
@@ -159,7 +159,7 @@ class Supplier(db.Model):
 class PurchaseOrder(db.Model):
     __tablename__ = 'purchase_orders'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=True)
     medicine_id = db.Column(db.Integer, db.ForeignKey('medicines.id'), nullable=True)
     requested_quantity = db.Column(db.Integer, default=100) # Qté recommandée
@@ -169,7 +169,7 @@ class PurchaseOrder(db.Model):
 class Sale(db.Model):
     __tablename__ = 'sales'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     total_amount = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(50), nullable=False) # Cash, OrangeMoney, MTN
@@ -181,7 +181,7 @@ class Sale(db.Model):
 class SaleItem(db.Model):
     __tablename__ = 'sale_items'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     sale_id = db.Column(db.Integer, db.ForeignKey('sales.id'), nullable=False)
     batch_id = db.Column(db.Integer, db.ForeignKey('batches.id'), nullable=False) # FEFO point
     quantity = db.Column(db.Integer, nullable=False)
@@ -193,7 +193,7 @@ class SaleItem(db.Model):
 class Shift(db.Model):
     __tablename__ = 'shifts'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
@@ -202,7 +202,7 @@ class Shift(db.Model):
 class TimeClock(db.Model):
     __tablename__ = 'time_clocks'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now())
     action_type = db.Column(db.String(10), nullable=False) # "IN" ou "OUT"
@@ -211,7 +211,7 @@ class TimeClock(db.Model):
 class PayrollRecord(db.Model):
     __tablename__ = 'payroll_records'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     month = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
@@ -228,7 +228,7 @@ class PayrollRecord(db.Model):
 class SalaryAdvance(db.Model):
     __tablename__ = 'salary_advances'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True) # SaaS
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True) # SaaS
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
@@ -252,7 +252,7 @@ class SubscriptionPlan(db.Model):
 class SubscriptionRecord(db.Model):
     __tablename__ = 'subscription_records'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False, index=True)
     plan_name = db.Column(db.String(50), nullable=False)
     amount = db.Column(db.Float, default=0.0)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -267,7 +267,7 @@ class SubscriptionRecord(db.Model):
 class Customer(db.Model):
     __tablename__ = 'customers'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False, index=True)
     name = db.Column(db.String(150), nullable=False)
     phone = db.Column(db.String(50), nullable=True)
     email = db.Column(db.String(150), nullable=True)
@@ -280,7 +280,7 @@ class Customer(db.Model):
 class Task(db.Model):
     __tablename__ = 'tasks'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False, index=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assigned_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     title = db.Column(db.String(200), nullable=False)
@@ -296,7 +296,7 @@ class Task(db.Model):
 class LeaveRequest(db.Model):
     __tablename__ = 'leave_requests'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     leave_type = db.Column(db.String(50), nullable=False) # Congé, Maladie, Autre
     start_date = db.Column(db.Date, nullable=False)
@@ -311,7 +311,7 @@ class SystemLog(db.Model):
     __tablename__ = 'system_logs'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=True, index=True)
     action = db.Column(db.String(100), nullable=False) # Login, Delete, Payment, etc.
     details = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(50), nullable=True)
@@ -323,7 +323,7 @@ class SystemLog(db.Model):
 class SupportTicket(db.Model):
     __tablename__ = 'support_tickets'
     id = db.Column(db.Integer, primary_key=True)
-    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False)
+    pharmacy_id = db.Column(db.Integer, db.ForeignKey('pharmacies.id'), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     subject = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)

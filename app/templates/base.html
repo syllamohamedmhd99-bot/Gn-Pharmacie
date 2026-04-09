@@ -215,8 +215,8 @@
                 <div class="collapse {% if 'hr' in request.path or 'calendar' in request.endpoint or 'tasks' in request.endpoint %}show{% endif %}" id="collapseRH">
                     <div class="ps-4">
                         {% if current_user.can_view_hr or current_user.role == 'Admin' %}
-                        <a class="nav-link py-2 {% if 'hr' in request.path and 'directory' not in request.path and 'leaves' not in request.path %}active{% endif %}" href="{{ url_for('hr.dashboard') }}" style="font-size: 0.85rem;"> Plannings</a>
-                        <a class="nav-link py-2 {% if 'leaves' in request.path %}active{% endif %}" href="{{ url_for('hr.leaves') }}" style="font-size: 0.85rem;"> Gestion Congés</a>
+                        <a class="nav-link py-2 {% if request.endpoint == 'hr.dashboard' %}active{% endif %}" href="{{ url_for('hr.dashboard') }}" style="font-size: 0.85rem;"> Plannings</a>
+                        <a class="nav-link py-2 {% if request.endpoint == 'hr.leaves' %}active{% endif %}" href="{{ url_for('hr.leaves') }}" style="font-size: 0.85rem;"> Gestion Congés</a>
                         {% endif %}
                         
                         {% if current_user.can_view_tasks or current_user.role == 'Admin' %}
@@ -300,6 +300,21 @@
             </div>
             {% endif %}
         </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i data-lucide="info" size="18"></i>
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
         {% block content %}{% endblock %}
 

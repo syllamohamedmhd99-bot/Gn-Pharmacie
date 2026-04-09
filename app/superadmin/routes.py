@@ -39,6 +39,70 @@ def check_super_admin():
         return False
     return True
 
+@bp_superadmin.route('/optimize-db')
+@login_required
+def optimize_db():
+    if not current_user.is_authenticated or not current_user.is_super_admin:
+        return "Accès interdit", 403
+        
+    try:
+        # Liste des index à créer
+        indexes = [
+            ("idx_users_pharmacy_id", "users", "pharmacy_id"),
+            ("idx_medicines_pharmacy_id", "medicines", "pharmacy_id"),
+            ("idx_batches_pharmacy_id", "batches", "pharmacy_id"),
+            ("idx_batches_expiry_date", "batches", "expiry_date"),
+            ("idx_suppliers_pharmacy_id", "suppliers", "pharmacy_id"),
+            ("idx_purchase_orders_pharmacy_id", "purchase_orders", "pharmacy_id"),
+            ("idx_sales_pharmacy_id", "sales", "pharmacy_id"),
+            ("idx_sale_items_pharmacy_id", "sale_items", "pharmacy_id"),
+            ("idx_shifts_pharmacy_id", "shifts", "pharmacy_id"),
+            ("idx_time_clocks_pharmacy_id", "time_clocks", "pharmacy_id"),
+            ("idx_payroll_records_pharmacy_id", "payroll_records", "pharmacy_id"),
+            ("idx_salary_advances_pharmacy_id", "salary_advances", "pharmacy_id"),
+            ("idx_subscription_records_pharmacy_id", "subscription_records", "pharmacy_id"),
+            ("idx_customers_pharmacy_id", "customers", "pharmacy_id"),
+            ("idx_tasks_pharmacy_id", "tasks", "pharmacy_id"),
+            ("idx_leave_requests_pharmacy_id", "leave_requests", "pharmacy_id"),
+            ("idx_system_logs_pharmacy_id", "system_logs", "pharmacy_id"),
+            ("idx_support_tickets_pharmacy_id", "support_tickets", "pharmacy_id"),
+            ("idx_pharmacies_is_active", "pharmacies", "is_active")
+        ]
+        
+        from sqlalchemy import text
+        for idx_name, table, column in indexes:
+            try:
+                sql = text(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {table}({column})")
+                db.session.execute(sql)
+            except Exception as e:
+                print(f"Erreur sur {idx_name}: {e}")
+        
+        db.session.commit()
+        log_action("Database Optimization", "Indexation de masse effectuée avec succès.")
+        flash("La base de données a été optimisée avec succès ! Le site devrait être beaucoup plus rapide.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de l'optimisation : {e}", "danger")
+        
+    return redirect(url_for('superadmin.dashboard'))
+    
+@bp_superadmin.route('/check-schema')
+@login_required
+def check_schema():
+    if not current_user.is_authenticated or not current_user.is_super_admin:
+        return "Accès interdit", 403
+        
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        result = {}
+        for table in inspector.get_table_names():
+            result[table] = [c['name'] for c in inspector.get_columns(table)]
+        return jsonify(result)
+    except Exception as e:
+        return str(e), 500
+
+
 @bp_superadmin.route('/dashboard')
 @login_required
 def dashboard():
@@ -142,31 +206,17 @@ def update_subscription(id):
             if u.role == 'Admin':
                 u.is_active = True
         
-        log_action("Subscription Update", f"Pharma {pharma.name} set to {plan.name} at {plan.price} GNF", pharma.id)
-        
-        # --- NOTIFICATION EMAIL AU SUPER ADMIN ---
         try:
-            # On utilise l'email du superadmin au lieu de hardcoder
-            superadmins = User.query.filter_by(is_super_admin=True, is_active=True).all()
-            recipients = [u.email for u in superadmins] if superadmins else ["syllamohamedmhd99@gmail.com"]
-            
-            msg = Message(f"💸 Nouveau Paiement : {pharma.name}",
-                          recipients=recipients)
-            msg.body = f"Bonjour,\n\nUne nouvelle transaction a été validée :\n\n" \
-                       f"Pharmacie : {pharma.name}\n" \
-                       f"Forfait : {plan.name}\n" \
-                       f"Montant : {plan.price:,.0f} GNF\n" \
-                       f"Nouvelle expiration : {pharma.subscription_end_date.strftime('%d/%m/%Y')}\n\n" \
-                       f"L'accès a été prolongé automatiquement.\n\n" \
-                       f"Cordialement,\nPharmaCloud SaaS"
-            mail.send(msg)
+            db.session.commit()
+            log_action("Subscription Update", f"Pharma {pharma.name} set to {plan.name} at {plan.price} GNF", pharma.id)
+            flash(f"Abonnement {plan.name} activé pour {pharma.name}.", "success")
         except Exception as e:
-            print(f"Erreur notification email: {e}")
-
-        db.session.commit()
-        flash(f"Abonnement {plan.name} activé pour {pharma.name}.", "success")
+            db.session.rollback()
+            flash(f"Erreur lors de la mise à jour : {str(e)}", "danger")
+    else:
+        flash("Plan de souscription non trouvé.", "danger")
     
-    return redirect(url_for('superadmin.dashboard'))
+    return redirect(request.referrer or url_for('superadmin.subscriptions'))
 
 @bp_superadmin.route('/reports')
 @login_required
@@ -174,8 +224,13 @@ def reports():
     if not check_super_admin():
         return redirect(url_for('index'))
     
-    history = SubscriptionRecord.query.order_by(SubscriptionRecord.timestamp.desc()).all()
-    return render_template('superadmin/reports.html', history=history)
+    try:
+        history = SubscriptionRecord.query.order_by(SubscriptionRecord.timestamp.desc()).all()
+        return render_template('superadmin/reports.html', history=history)
+    except Exception as e:
+        log_action("Reports Error", f"Error loading reports: {str(e)}")
+        flash("Une erreur est survenue lors du chargement des rapports.", "danger")
+        return render_template('superadmin/reports.html', history=[])
 
 @bp_superadmin.route('/export/payments')
 @login_required
@@ -222,17 +277,33 @@ def plans():
 def add_plan():
     if not check_super_admin():
         return "Unauthorized", 401
-    
-    new_plan = SubscriptionPlan(
-        name=request.form.get('name'),
-        price=float(request.form.get('price')),
-        duration_days=int(request.form.get('duration')),
-        description=request.form.get('description')
-    )
-    db.session.add(new_plan)
-    db.session.commit()
-    log_action("Add Plan", f"New plan {new_plan.name} created at {new_plan.price} GNF")
-    flash("Nouveau forfait ajouté avec succès.", "success")
+        
+    try:
+        name = request.form.get('name')
+        price_str = request.form.get('price')
+        duration_str = request.form.get('duration')
+        description = request.form.get('description')
+
+        if not name or not price_str or not duration_str:
+            flash("Veuillez remplir tous les champs obligatoires.", "warning")
+            return redirect(url_for('superadmin.plans'))
+
+        new_plan = SubscriptionPlan(
+            name=name,
+            price=float(price_str),
+            duration_days=int(duration_str),
+            description=description
+        )
+        db.session.add(new_plan)
+        db.session.commit()
+        log_action("Add Plan", f"New plan {new_plan.name} created at {new_plan.price} GNF")
+        flash("Nouveau forfait ajouté avec succès.", "success")
+    except ValueError:
+        flash("Erreur : Le prix et la durée doivent être des nombres valides.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de l'ajout : {str(e)}", "danger")
+        
     return redirect(url_for('superadmin.plans'))
 
 @bp_superadmin.route('/plans/delete/<int:id>')
@@ -253,16 +324,31 @@ def delete_plan(id):
 def edit_plan(id):
     if not check_super_admin():
         return "Unauthorized", 401
-    
-    plan = SubscriptionPlan.query.get_or_404(id)
-    plan.name = request.form.get('name')
-    plan.price = float(request.form.get('price'))
-    plan.duration_days = int(request.form.get('duration'))
-    plan.description = request.form.get('description')
-    
-    db.session.commit()
-    log_action("Edit Plan", f"Plan {plan.name} updated")
-    flash(f"Le forfait {plan.name} a été mis à jour.", "success")
+        
+    try:
+        plan = SubscriptionPlan.query.get_or_404(id)
+        name = request.form.get('name')
+        price_str = request.form.get('price')
+        duration_str = request.form.get('duration')
+        
+        if not name or not price_str or not duration_str:
+            flash("Veuillez remplir tous les champs obligatoires.", "warning")
+            return redirect(url_for('superadmin.plans'))
+
+        plan.name = name
+        plan.price = float(price_str)
+        plan.duration_days = int(duration_str)
+        plan.description = request.form.get('description')
+        
+        db.session.commit()
+        log_action("Edit Plan", f"Plan {plan.name} updated")
+        flash(f"Le forfait {plan.name} a été mis à jour.", "success")
+    except ValueError:
+        flash("Erreur : Le prix et la durée doivent être des nombres valides.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de la modification : {str(e)}", "danger")
+        
     return redirect(url_for('superadmin.plans'))
 
 @bp_superadmin.route('/plans/toggle/<int:id>')
@@ -285,17 +371,22 @@ def toggle_plan(id):
 def approve_pharmacy(id):
     if not check_super_admin():
         return "Unauthorized", 401
+    try:
+        pharma = Pharmacy.query.get_or_404(id)
+        pharma.is_active = True
         
-    pharma = Pharmacy.query.get_or_404(id)
-    pharma.is_active = True
-    
-    # Activer tous les utilisateurs de cette pharmacie
-    for user in pharma.users:
-        user.is_active = True
+        # Activer les admins
+        for user in pharma.users:
+            if user.role == 'Admin':
+                user.is_active = True
+                
+        db.session.commit()
+        log_action("Approve Pharmacy", f"Pharma {pharma.name} approved and activated", pharma.id)
+        flash(f"La pharmacie {pharma.name} a été approuvée.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de l'approbation : {str(e)}", "danger")
         
-    db.session.commit()
-    log_action("Approve Pharmacy", f"Pharma {pharma.name} approved and activated", pharma.id)
-    flash(f"La pharmacie {pharma.name} a été validée avec succès !", "success")
     return redirect(url_for('superadmin.subscriptions'))
 
 @bp_superadmin.route('/pharmacy/delete/<int:id>', methods=['POST'])
@@ -392,9 +483,16 @@ def close_ticket(id):
 def toggle_user(id):
     if not check_super_admin():
         return "Unauthorized", 401
+        
+    if current_user.id == id:
+        flash("Sécurité : Vous ne pouvez pas désactiver votre propre compte.", "danger")
+        return redirect(url_for('superadmin.users'))
+        
     user = User.query.get_or_404(id)
     user.is_active = not user.is_active
     db.session.commit()
+    
+    status = "activé" if user.is_active else "désactivé"
     log_action("Toggle User", f"User {user.email} status set to {user.is_active}")
-    flash(f"Statut de {user.email} mis à jour.", "info")
+    flash(f"L'utilisateur {user.email} a été {status}.", "success")
     return redirect(url_for('superadmin.users'))

@@ -10,10 +10,21 @@
     <div class="col-lg-9">
         <div class="card border-0 shadow-sm p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="fw-bold mb-0">Vue Plannings & Événements</h5>
-                <div class="btn-group shadow-sm rounded-pill p-1 bg-light">
-                    <button class="btn btn-sm btn-white active rounded-pill px-3">Mois</button>
-                    <button class="btn btn-sm btn-light rounded-pill px-3">Semaine</button>
+                <h5 class="fw-bold mb-0">
+                    <i data-lucide="calendar" class="me-2 text-primary"></i>
+                    {% set month_names = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"] %}
+                    {{ month_names[current_month - 1] }} {{ current_year }}
+                </h5>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('productivity.calendar', month=current_month-1 if current_month > 1 else 12, year=current_year if current_month > 1 else current_year-1) }}" 
+                       class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        <i data-lucide="chevron-left" style="width: 14px;"></i>
+                    </a>
+                    <a href="{{ url_for('productivity.calendar') }}" class="btn btn-sm btn-primary rounded-pill px-3">Aujourd'hui</a>
+                    <a href="{{ url_for('productivity.calendar', month=current_month+1 if current_month < 12 else 1, year=current_year if current_month < 12 else current_year+1) }}" 
+                       class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        <i data-lucide="chevron-right" style="width: 14px;"></i>
+                    </a>
                 </div>
             </div>
 
@@ -31,18 +42,30 @@
                     </div>
                 </div>
                 <div class="calendar-body p-2" style="background-color: white;">
-                    {% set days = range(1, 32) %}
                     <div class="row g-2">
                         {% for d in days %}
                         <div class="col-1-7 border rounded-3 p-2 min-vh-15 position-relative hover-lift">
                             <span class="small fw-bold text-muted">{{ d }}</span>
-                            <!-- Simulation Event -->
-                            {% if d == 15 %}
-                            <div class="badge bg-primary w-100 mt-2 small text-truncate">Garde Nuit</div>
-                            {% endif %}
-                            {% if d == 20 %}
-                            <div class="badge bg-success w-100 mt-2 small text-truncate">Livraison Pharma</div>
-                            {% endif %}
+                            <!-- Shifts -->
+                            {% for shift in shifts if shift.date.day == d %}
+                            <div class="badge bg-primary w-100 mt-1 x-small text-truncate" title="{{ shift.user.first_name }} {{ shift.start_time.strftime('%H:%M') }}">
+                                <i data-lucide="clock" style="width: 10px; height: 10px;"></i> {{ shift.user.first_name[0] }}. - {{ shift.start_time.strftime('%H:%M') }}
+                            </div>
+                            {% endfor %}
+
+                            <!-- Leaves -->
+                            {% for leave in leaves if leave.start_date.day <= d and leave.end_date.day >= d %}
+                            <div class="badge bg-warning text-dark w-100 mt-1 x-small text-truncate" title="Congé: {{ leave.user.first_name }}">
+                                <i data-lucide="palm-tree" style="width: 10px; height: 10px;"></i> {{ leave.user.first_name[0] }}.
+                            </div>
+                            {% endfor %}
+
+                            <!-- Tasks -->
+                            {% for task in tasks if task.due_date and task.due_date.day == d %}
+                            <div class="badge bg-success w-100 mt-1 x-small text-truncate" title="Tâche: {{ task.title }}">
+                                <i data-lucide="check-square" style="width: 10px; height: 10px;"></i> {{ task.title[:10] }}...
+                            </div>
+                            {% endfor %}
                         </div>
                         {% endfor %}
                     </div>

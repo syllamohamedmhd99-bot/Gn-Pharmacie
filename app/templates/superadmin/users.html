@@ -39,9 +39,13 @@
                         {% endif %}
                     </td>
                     <td class="text-end pe-4">
+                        {% if user.id != current_user.id %}
                         <a href="{{ url_for('superadmin.toggle_user', id=user.id) }}" class="btn btn-sm {% if user.is_active %}btn-outline-danger{% else %}btn-success{% endif %} rounded-pill px-3">
                             {% if user.is_active %}Désactiver{% else %}Activer{% endif %}
                         </a>
+                        {% else %}
+                        <span class="badge bg-light text-muted rounded-pill px-3">Vous</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

@@ -186,6 +186,21 @@
 </div>
 {% endfor %}
 
+<!-- Section Maintenance -->
+<div class="card stat-card border-0 shadow-sm mt-5 bg-light">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="fw-bold mb-1 text-dark">Maintenance du Système</h5>
+                <p class="text-muted small mb-0">Optimisez les performances de la base de données en cas de lenteurs constatées.</p>
+            </div>
+            <a href="{{ url_for('superadmin.optimize_db') }}" class="btn btn-dark rounded-pill px-4 shadow-sm" onclick="return confirm('Cette opération va recalculer les index de performance. Voulez-vous continuer ?')">
+                <i data-lucide="zap" size="18" class="me-2 text-warning"></i> Optimiser PharmaCloud
+            </a>
+        </div>
+    </div>
+</div>
+
 <style>
     .cursor-pointer { cursor: pointer; }
     .stat-card { background-color: white; }

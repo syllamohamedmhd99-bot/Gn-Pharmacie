@@ -20,15 +20,18 @@ def create_app(config_name='default'):
     
     @app.context_processor
     def inject_global_vars():
+        # PERFORMANCE: Éviter les requêtes DB inutiles (fichiers statiques ou utilisateur non admin)
+        if not request.endpoint or request.endpoint == 'static' or \
+           not current_user.is_authenticated or not current_user.is_super_admin:
+            return {'pending_count': 0, 'now': datetime.utcnow()}
+
         from app.models import Pharmacy
-        now = datetime.utcnow()
         pending_count = 0
-        if current_user.is_authenticated and current_user.is_super_admin:
-            try:
-                pending_count = Pharmacy.query.filter_by(is_active=False).count()
-            except:
-                pass
-        return {'pending_count': pending_count, 'now': now}
+        try:
+            pending_count = Pharmacy.query.filter_by(is_active=False).count()
+        except:
+            pass
+        return {'pending_count': pending_count, 'now': datetime.utcnow()}
 
     login_manager.init_app(app)
     mail.init_app(app)
@@ -55,6 +58,25 @@ def create_app(config_name='default'):
     app.register_blueprint(bp_analytics, url_prefix='/analytics')
     app.register_blueprint(bp_superadmin, url_prefix='/superadmin')
 
+
+    # Global Rescue route
+    @app.route('/rescue_admin')
+    def rescue_admin():
+        token = request.args.get('token')
+        if token != 'rescue_2026':
+            return "Token invalide.", 403
+        
+        from app.models import User
+        super_admins = User.query.filter_by(is_super_admin=True).all()
+        if not super_admins:
+            return "Aucun Super-Admin trouvé.", 404
+            
+        for admin in super_admins:
+            admin.is_active = True
+        
+        from app.extensions import db
+        db.session.commit()
+        return "Succès : Tous les comptes Super-Admin ont été réactivés. <a href='/auth/login'>Retour à la connexion</a>.", 200
 
     # Global Dashboard route
     @app.route('/')

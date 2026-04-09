@@ -45,14 +45,22 @@
                 <tr>
                     <td class="ps-4 text-muted small">#{{ record.id }}</td>
                     <td>
-                        <div class="fw-bold text-dark">{{ record.pharmacy.name }}</div>
+                        <div class="fw-bold text-dark">
+                            {% if record.pharmacy %}
+                                {{ record.pharmacy.name }}
+                            {% else %}
+                                <span class="text-danger small">Pharmacie supprimée (ID: {{ record.pharmacy_id }})</span>
+                            {% endif %}
+                        </div>
                     </td>
                     <td><span class="badge bg-dark rounded-pill px-3">{{ record.plan_name }}</span></td>
                     <td>
-                        <div class="fw-bold text-success">{{ "{:,.0f}".format(record.amount).replace(',', ' ') }} GNF</div>
+                        <div class="fw-bold text-success">
+                            {{ "{:,.0f}".format(record.amount or 0).replace(',', ' ') }} GNF
+                        </div>
                     </td>
                     <td class="text-end pe-4 text-muted small">
-                        {{ record.timestamp.strftime('%d/%m/%Y à %H:%M') }}
+                        {{ record.timestamp.strftime('%d/%m/%Y à %H:%M') if record.timestamp else 'N/A' }}
                     </td>
                 </tr>
                 {% endfor %}

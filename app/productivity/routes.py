@@ -74,11 +74,42 @@ def update_task_status(id):
 def calendar():
     # Global View
     from app.models import Shift, LeaveRequest
-    shifts = Shift.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
-    leaves = LeaveRequest.query.filter_by(pharmacy_id=current_user.pharmacy_id, status='Approuvé').all()
-    tasks = Task.query.filter_by(pharmacy_id=current_user.pharmacy_id).all()
+    from datetime import datetime
+    import calendar as py_calendar
     
-    return render_template('productivity/calendar.html', shifts=shifts, leaves=leaves, tasks=tasks)
+    now = datetime.now()
+    month = int(request.args.get('month', now.month))
+    year = int(request.args.get('year', now.year))
+    
+    # Get range of days for the month
+    _, num_days = py_calendar.monthrange(year, month)
+    days = range(1, num_days + 1)
+    
+    shifts = Shift.query.filter_by(pharmacy_id=current_user.pharmacy_id).filter(
+        db.extract('month', Shift.date) == month,
+        db.extract('year', Shift.date) == year
+    ).all()
+    
+    leaves = LeaveRequest.query.filter_by(pharmacy_id=current_user.pharmacy_id, status='Approuvé').filter(
+        db.extract('month', LeaveRequest.start_date) <= month,
+        db.extract('month', LeaveRequest.end_date) >= month,
+        db.extract('year', LeaveRequest.start_date) <= year,
+        db.extract('year', LeaveRequest.end_date) >= year
+    ).all()
+    
+    tasks = Task.query.filter_by(pharmacy_id=current_user.pharmacy_id).filter(
+        db.extract('month', Task.due_date) == month,
+        db.extract('year', Task.due_date) == year
+    ).all()
+    
+    return render_template('productivity/calendar.html', 
+                           shifts=shifts, 
+                           leaves=leaves, 
+                           tasks=tasks,
+                           days=days,
+                           current_month=month,
+                           current_year=year,
+                           now=now)
 
 @bp_productivity.route('/tasks/delete/<int:id>', methods=['POST'])
 @login_required
