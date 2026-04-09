@@ -15,13 +15,4 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: pharmacloud-db
-          property: connectionString
-
-# Service de Base de données PostgreSQL
-databases:
-  - name: pharmacloud-db
-    databaseName: pharmacloud
-    user: pharmacloud
-    plan: free # Vous pourrez passer en payant plus tard si besoin
+        sync: false # On l'ajoutera manuellement ou via le prompt lors de la création
