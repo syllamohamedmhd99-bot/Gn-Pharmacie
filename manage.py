@@ -6,7 +6,12 @@ from app.models import User, Pharmacy, SubscriptionPlan, SubscriptionRecord, Cus
 from datetime import datetime, timedelta
 from sqlalchemy import text
 
-app = create_app(os.getenv('FLASK_ENV') or 'default')
+# Détection automatique de l'environnement de production
+env = os.getenv('FLASK_ENV') or 'default'
+if os.getenv('DATABASE_URL'):
+    env = 'production'
+
+app = create_app(env)
 
 @app.cli.command("seed")
 def seed():
