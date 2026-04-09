@@ -59,22 +59,21 @@ def create_app(config_name='default'):
     def test_direct():
         return "Test Réussi [SYNC OK] - Le serveur fonctionne !"
 
-    @app.route('/debug-prod')
-    def debug_prod():
+    @app.route('/force-admin')
+    def force_admin():
         import traceback
         try:
             from app.models import User
-            # On cherche l'admin spécifiquement
+            from flask_login import login_user
             user = User.query.filter_by(email='syllamohamedmhd99@gmail.com').first()
             if not user:
-                return "UTILISATEUR NON TROUVÉ. Le seeding a peut-être échoué."
-            
-            # Test de la colonne critique
-            is_sa = getattr(user, 'is_super_admin', 'COLONNE MANQUANTE')
-            
-            return f"User: {user.email}<br>SuperAdmin: {is_sa}<br>Status: {user.is_active}"
+                return "Admin non trouvé"
+            login_user(user)
+            # On tente d'accéder au dashboard manuellement
+            from app.superadmin.routes import dashboard
+            return dashboard()
         except Exception as e:
-            return f"ERREUR DÉTECTÉE (PROFONT) :<br><pre>{traceback.format_exc()}</pre>"
+            return f"CRASH DÉTECTÉ LORS DE LA CONNEXION :<br><pre>{traceback.format_exc()}</pre>"
 
     # Global Dashboard route
     @app.route('/')
