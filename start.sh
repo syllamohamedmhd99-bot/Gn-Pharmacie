@@ -3,6 +3,9 @@ echo "--- Lancement du script de démarrage PharmaCloud ---"
 echo "Environnement: $FLASK_ENV"
 echo "Port: $PORT"
 
+# Exécuter le diagnostic pour capturer les erreurs dans les logs
+python diagnostic.py || echo "Attention: Le diagnostic a détecté une erreur critique."
+
 # Appliquer les migrations de base de données
 export FLASK_APP=manage.py
 flask db upgrade || echo "Attention: flask db upgrade a échoué, on tente l'init classique."
