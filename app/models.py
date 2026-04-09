@@ -19,25 +19,34 @@ from flask import request
 # SI l'utilisateur est connecté et n'est pas un SuperAdmin.
 @event.listens_for(db.Query, "before_compile", retval=True)
 def apply_tenant_filter(query):
+    from flask import has_request_context, request
     from flask_login import current_user
     
-    # 1. Ne pas filtrer si : Non connecté / SuperAdmin / Route SuperAdmin
-    if not current_user or not current_user.is_authenticated:
-        return query
-        
-    if current_user.is_super_admin:
-        return query
-        
-    # Vérifier si on est dans un contexte de Blueprint SuperAdmin (sécurité supplémentaire)
-    if request and request.blueprint == 'superadmin':
+    # 1. Sécurité absolue : Ne rien faire si on n'est pas dans une requête HTTP
+    if not has_request_context():
         return query
 
-    # 2. Identifier les entités de la requête qui ont une colonne 'pharmacy_id'
-    for column_descr in query.column_descriptions:
-        entity = column_descr['entity']
-        if entity and hasattr(entity, 'pharmacy_id'):
-            # 3. Appliquer le filtre de sécurité de la pharmacie actuelle
-            query = query.filter(entity.pharmacy_id == current_user.pharmacy_id)
+    # 2. Ne pas filtrer si l'utilisateur n'est pas encore totalement chargé ou authentifié
+    # Cela évite la boucle infinie au moment du login
+    try:
+        if not current_user or not current_user.is_authenticated:
+            return query
+            
+        if current_user.is_super_admin:
+            return query
+
+        # 3. Ne pas filtrer pour les routes SuperAdmin
+        if request.blueprint == 'superadmin':
+            return query
+
+        # 4. Appliquer le filtre sur les entités possédant 'pharmacy_id'
+        for column_descr in query.column_descriptions:
+            entity = column_descr['entity']
+            if entity and hasattr(entity, 'pharmacy_id'):
+                query = query.filter(entity.pharmacy_id == current_user.pharmacy_id)
+    except Exception:
+        # En cas de doute (ex: pendant que Flask-Login s'initialise), on ne filtre pas
+        pass
             
     return query
 
