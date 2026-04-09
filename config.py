@@ -33,10 +33,12 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Flask-Session
-    SESSION_TYPE = os.environ.get('SESSION_TYPE') or 'filesystem'
-    SESSION_PERMANENT = False
+    # Sessions sur Base de Données (Plus stable sur Railway)
+    SESSION_TYPE = 'sqlalchemy'
+    SESSION_SQLALCHEMY = db
+    SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
+    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     
     # Mail Settings (Default: Gmail)
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
