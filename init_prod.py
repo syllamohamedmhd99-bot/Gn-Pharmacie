@@ -26,8 +26,8 @@ if __name__ == "__main__":
             
             # 4. Synchroniser l'historique des migrations (Marquer comme à jour)
             try:
-                stamp()
-                print("[OK] Historique des migrations synchronisé (Stamp).")
+                stamp(revision='head')
+                print("[OK] Historique des migrations synchronisé (Stamp: head).")
             except Exception as e_stamp:
                  print(f"[INFO] Stamp des migrations: {str(e_stamp)}")
 
