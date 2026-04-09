@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "(python init_prod.py || true) && gunicorn -b 0.0.0.0:$PORT --timeout 120 run:app",
+    "startCommand": "bash start.sh",
     "restartPolicyType": "ON_FAILURE"
   }
 }
