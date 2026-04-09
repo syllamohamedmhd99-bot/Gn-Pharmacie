@@ -33,9 +33,8 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # Sessions sur Base de Données (Plus stable sur Railway)
-    SESSION_TYPE = 'sqlalchemy'
-    SESSION_SQLALCHEMY = db
+    # Flask-Session
+    SESSION_TYPE = 'filesystem'
     SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)

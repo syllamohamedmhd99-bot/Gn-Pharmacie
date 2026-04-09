@@ -55,25 +55,6 @@ def create_app(config_name='default'):
     app.register_blueprint(bp_analytics, url_prefix='/analytics')
     app.register_blueprint(bp_superadmin, url_prefix='/superadmin')
 
-    @app.route('/test')
-    def test_direct():
-        return "Test Réussi [SYNC OK] - Le serveur fonctionne !"
-
-    @app.route('/force-admin')
-    def force_admin():
-        import traceback
-        try:
-            from app.models import User
-            from flask_login import login_user
-            user = User.query.filter_by(email='syllamohamedmhd99@gmail.com').first()
-            if not user:
-                return "Admin non trouvé"
-            login_user(user)
-            # On tente d'accéder au dashboard manuellement
-            from app.superadmin.routes import dashboard
-            return dashboard()
-        except Exception as e:
-            return f"CRASH DÉTECTÉ LORS DE LA CONNEXION :<br><pre>{traceback.format_exc()}</pre>"
 
     # Global Dashboard route
     @app.route('/')

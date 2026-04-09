@@ -17,37 +17,10 @@ from flask import request
 # HOOK DE SÉCURITÉ : Multi-Tenancy Automatique
 # Ce hook injecte systématiquement "filter_by(pharmacy_id=...)" sur toutes les requêtes
 # SI l'utilisateur est connecté et n'est pas un SuperAdmin.
-@event.listens_for(db.Query, "before_compile", retval=True)
-def apply_tenant_filter(query):
-    # DÉSACTIVATION TEMPORAIRE POUR DIAGNOSTIC (ERROR 500)
-    return query
-
-    # 2. Ne rien faire si on est en train de charger l'utilisateur (Évite la récursion infinie)
-    try:
-        # On vérifie si la requête concerne la table 'users'
-        for column_descr in query.column_descriptions:
-            entity = column_descr['entity']
-            # Si on interroge la table User, on ne filtre PAS ici pour laisser Flask-Login travailler
-            if entity and hasattr(entity, '__tablename__') and entity.__tablename__ == 'users':
-                return query
-
-        if not current_user or not current_user.is_authenticated:
-            return query
-            
-        if current_user.is_super_admin:
-            return query
-
-        if request.blueprint == 'superadmin':
-            return query
-
-        for column_descr in query.column_descriptions:
-            entity = column_descr['entity']
-            if entity and hasattr(entity, 'pharmacy_id'):
-                query = query.filter(entity.pharmacy_id == current_user.pharmacy_id)
-    except Exception:
-        pass
-            
-    return query
+# FILTRE DE SÉCURITÉ DÉSACTIVÉ POUR RÉTABLIR L'ACCÈS
+# @event.listens_for(db.Query, "before_compile", retval=True)
+# def apply_tenant_filter(query):
+#     return query
 
 # PILIER 0: Multi-Tenancy (SaaS)
 class Pharmacy(db.Model):
