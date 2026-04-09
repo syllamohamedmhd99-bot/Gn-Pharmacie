@@ -5,6 +5,9 @@
   },
   "deploy": {
     "startCommand": "bash start.sh",
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "ON_FAILURE",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300,
+    "servicePort": 8080
   }
 }
