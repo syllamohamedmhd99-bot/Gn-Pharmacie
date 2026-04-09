@@ -57,9 +57,8 @@ class ProductionConfig(Config):
         },
         "pool_pre_ping": True,
     }
-    # En production, on utilise sqlalchemy pour que les sessions persistent
-    # même après un redémarrage du serveur (Vercel/Render)
-    SESSION_TYPE = 'sqlalchemy'
+    # En production, on utilise filesystem temporairement pour stabiliser la connexion
+    SESSION_TYPE = 'filesystem'
     
 config = {
     'development': DevelopmentConfig,
