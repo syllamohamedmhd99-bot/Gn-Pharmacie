@@ -248,6 +248,38 @@ def delete_plan(id):
     flash("Forfait supprimé.", "warning")
     return redirect(url_for('superadmin.plans'))
 
+@bp_superadmin.route('/plans/edit/<int:id>', methods=['POST'])
+@login_required
+def edit_plan(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+    
+    plan = SubscriptionPlan.query.get_or_404(id)
+    plan.name = request.form.get('name')
+    plan.price = float(request.form.get('price'))
+    plan.duration_days = int(request.form.get('duration'))
+    plan.description = request.form.get('description')
+    
+    db.session.commit()
+    log_action("Edit Plan", f"Plan {plan.name} updated")
+    flash(f"Le forfait {plan.name} a été mis à jour.", "success")
+    return redirect(url_for('superadmin.plans'))
+
+@bp_superadmin.route('/plans/toggle/<int:id>')
+@login_required
+def toggle_plan(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+    
+    plan = SubscriptionPlan.query.get_or_404(id)
+    plan.is_active = not plan.is_active
+    db.session.commit()
+    
+    status = "activé" if plan.is_active else "désactivé"
+    log_action("Toggle Plan", f"Plan {plan.name} set to {status}")
+    flash(f"Le forfait {plan.name} est désormais {status}.", "info")
+    return redirect(url_for('superadmin.plans'))
+
 @bp_superadmin.route('/approve_pharmacy/<int:id>', methods=['POST'])
 @login_required
 def approve_pharmacy(id):
