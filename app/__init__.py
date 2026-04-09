@@ -98,6 +98,10 @@ def create_app(config_name='default'):
                 return
 
             pharma = current_user.pharmacy
+            if not pharma:
+                # Utilisateur orphelin : on redirigé vers le profil pour information
+                return
+
             if not pharma.is_active:
                 msg = "Votre compte pharmacie est inactif. Veuillez contacter le support."
                 if request.is_json or request.path.startswith('/api') or request.path.startswith('/pos/checkout'):

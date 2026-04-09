@@ -88,7 +88,7 @@ def register_admin():
         pharma_name = session.get('reg_pharma_name')
         if not pharma_name:
             flash("Informations de pharmacie manquantes. Veuillez recommencer l'étape 1.", "warning")
-            return redirect(url_for('auth.register_pharma'))
+            return redirect(url_for('auth.register'))
 
         # 1. Créer la Pharmacie (Inactive par défaut + 30j essai)
         try:

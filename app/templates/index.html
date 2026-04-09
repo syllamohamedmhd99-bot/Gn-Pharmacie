@@ -14,13 +14,13 @@
                 <div class="bg-warning bg-opacity-10 p-2 rounded-3">
                     <i data-lucide="crown" class="text-warning" style="width: 24px; height: 24px;"></i>
                 </div>
-                {% if current_user.pharmacy.subscription_end_date %}
+                {% if current_user.pharmacy and current_user.pharmacy.subscription_end_date %}
                 <span class="badge bg-warning-subtle text-warning rounded-pill px-3">
                     Expire le {{ current_user.pharmacy.subscription_end_date.strftime('%d/%m/%Y') }}
                 </span>
                 {% endif %}
             </div>
-            <div class="h3 fw-bold mb-1">{{ current_user.pharmacy.subscription_plan or 'Essai Gratuit' }}</div>
+            <div class="h3 fw-bold mb-1">{{ (current_user.pharmacy.subscription_plan if current_user.pharmacy else 'Essai Gratuit') or 'Essai Gratuit' }}</div>
             <div class="text-muted small fw-medium">Statut de l'Abonnement</div>
         </div>
     </div>
