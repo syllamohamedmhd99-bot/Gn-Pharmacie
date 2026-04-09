@@ -63,11 +63,12 @@ def create_app(config_name='default'):
     def debug_prod():
         import traceback
         try:
-            from app.models import User
-            users_count = User.query.count()
-            return f"Base de données OK. Nombre d'utilisateurs : {users_count}"
+            from flask import render_template
+            # On tente de "calculer" la page de login
+            res = render_template('auth/login.html')
+            return "Rendu Template Login: OK"
         except Exception as e:
-            return f"ERREUR DÉTECTÉE :<br><pre>{traceback.format_exc()}</pre>"
+            return f"ERREUR DÉTECTÉE (TEMPLATE) :<br><pre>{traceback.format_exc()}</pre>"
 
     # Global Dashboard route
     @app.route('/')
