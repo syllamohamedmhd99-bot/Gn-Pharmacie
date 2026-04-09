@@ -146,7 +146,7 @@ def dashboard():
                                total_saas_revenue=total_saas_revenue,
                                monthly_saas_revenue=monthly_saas_revenue,
                                pharma_stats=pharma_stats,
-                               plans=SubscriptionPlan.query.filter_by(is_active=True).all())
+                               plans=SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.price.asc()).all())
     except Exception as e:
         db.session.rollback()
         flash(f"Erreur d'accès Dashboard : {str(e)}", "danger")
@@ -279,7 +279,7 @@ def subscriptions():
         return redirect(url_for('index'))
         
     pharmacies = Pharmacy.query.order_by(Pharmacy.id.desc()).all()
-    plans = SubscriptionPlan.query.filter_by(is_active=True).all()
+    plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.price.asc()).all()
     return render_template('superadmin/subscriptions.html', pharmacies=pharmacies, plans=plans, now=datetime.utcnow())
 
 @bp_superadmin.route('/plans')

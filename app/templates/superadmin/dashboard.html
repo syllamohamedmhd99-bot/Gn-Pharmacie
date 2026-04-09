@@ -166,7 +166,7 @@
                         {% for p in plans %}
                         <label class="list-group-item rounded-3 border d-flex justify-content-between align-items-center p-3 cursor-pointer plan-item">
                             <div class="d-flex align-items-center gap-3">
-                                <input type="radio" name="plan_id" value="{{ p.id }}" {% if loop.first %}required{% endif %} class="form-check-input">
+                                <input type="radio" name="plan_id" value="{{ p.id }}" {% if loop.first %}checked required{% endif %} class="form-check-input">
                                 <div>
                                     <div class="fw-bold text-dark">{{ p.name }}</div>
                                     <div class="text-muted x-small">{{ p.duration_days }} jours</div>
