@@ -63,12 +63,18 @@ def create_app(config_name='default'):
     def debug_prod():
         import traceback
         try:
-            from flask import render_template
-            # On tente de "calculer" la page de login
-            res = render_template('auth/login.html')
-            return "Rendu Template Login: OK"
+            from app.models import User
+            # On cherche l'admin spécifiquement
+            user = User.query.filter_by(email='syllamohamedmhd99@gmail.com').first()
+            if not user:
+                return "UTILISATEUR NON TROUVÉ. Le seeding a peut-être échoué."
+            
+            # Test de la colonne critique
+            is_sa = getattr(user, 'is_super_admin', 'COLONNE MANQUANTE')
+            
+            return f"User: {user.email}<br>SuperAdmin: {is_sa}<br>Status: {user.is_active}"
         except Exception as e:
-            return f"ERREUR DÉTECTÉE (TEMPLATE) :<br><pre>{traceback.format_exc()}</pre>"
+            return f"ERREUR DÉTECTÉE (PROFONT) :<br><pre>{traceback.format_exc()}</pre>"
 
     # Global Dashboard route
     @app.route('/')
