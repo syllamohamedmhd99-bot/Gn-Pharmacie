@@ -1,10 +1,16 @@
 import os
 import click
-from app import create_app
-from app.extensions import db
-from app.models import User, Pharmacy, SubscriptionPlan, SubscriptionRecord, Customer, Task
-from datetime import datetime, timedelta
-from sqlalchemy import text
+try:
+    from app import create_app
+    from app.extensions import db
+    from app.models import User, Pharmacy, SubscriptionPlan, SubscriptionRecord, Customer, Task
+    from datetime import datetime, timedelta
+    from sqlalchemy import text
+except ImportError as e:
+    print(f"!!! DIAGNOSTIC ERREUR IMPORT : {str(e)} !!!")
+    import traceback
+    traceback.print_exc()
+    raise e
 
 # Détection automatique de l'environnement de production
 env = os.getenv('FLASK_ENV') or 'default'
