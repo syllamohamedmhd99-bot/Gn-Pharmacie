@@ -36,7 +36,8 @@
                     <th>PHARMACIE</th>
                     <th>FORFAIT CHOISI</th>
                     <th>MONTANT ENCAISSÉ</th>
-                    <th class="text-end pe-4">DATE & HEURE</th>
+                    <th class="text-center">DATE & HEURE</th>
+                    <th class="text-end pe-4">ACTIONS</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,8 +60,15 @@
                             {{ "{:,.0f}".format(record.amount or 0).replace(',', ' ') }} GNF
                         </div>
                     </td>
-                    <td class="text-end pe-4 text-muted small">
+                    <td class="text-center text-muted small">
                         {{ record.timestamp.strftime('%d/%m/%Y à %H:%M') if record.timestamp else 'N/A' }}
+                    </td>
+                    <td class="text-end pe-4">
+                        <form action="{{ url_for('superadmin.delete_subscription_record', id=record.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Supprimer cet enregistrement d\'historique ?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle p-2" title="Supprimer">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}

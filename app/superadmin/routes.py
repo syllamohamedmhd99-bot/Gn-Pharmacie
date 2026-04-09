@@ -232,6 +232,24 @@ def reports():
         flash("Une erreur est survenue lors du chargement des rapports.", "danger")
         return render_template('superadmin/reports.html', history=[])
 
+@bp_superadmin.route('/reports/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_subscription_record(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+    
+    record = SubscriptionRecord.query.get_or_404(id)
+    try:
+        db.session.delete(record)
+        db.session.commit()
+        log_action("Delete Subscription Record", f"Record #{id} deleted")
+        flash(f"L'enregistrement #{id} a été supprimé.", "warning")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de la suppression : {str(e)}", "danger")
+    
+    return redirect(url_for('superadmin.reports'))
+
 @bp_superadmin.route('/export/payments')
 @login_required
 def export_payments():
