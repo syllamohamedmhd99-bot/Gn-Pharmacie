@@ -14,11 +14,13 @@ if [ -n "$RAILWAY_STATIC_URL" ] && [ -z "$DATABASE_URL" ]; then
     exit 1
 fi
 
-# Appliquer les migrations de base de données
-export FLASK_APP=manage.py
-flask db upgrade || echo "Attention: flask db upgrade a échoué, on tente l'init classique."
+# Réparations, Création des tables et Seeding (SuperAdmin)
+# On le fait AVANT le upgrade pour créer les tables si elles manquent (Catch-22 fix)
+python init_prod.py || echo "Attention: L'initialisation/réparation a échoué."
 
-python init_prod.py || echo "Attention: init_prod a échoué, on tente de lancer le serveur quand même."
+# Appliquer les migrations de base de données (Sera ignoré si stampé par init_prod)
+export FLASK_APP=manage.py
+flask db upgrade || echo "Attention: flask db upgrade a échoué, on continue quand même."
 
 echo "Démarrage de Gunicorn..."
 gunicorn -b 0.0.0.0:$PORT --timeout 120 manage:app

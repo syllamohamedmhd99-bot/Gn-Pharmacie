@@ -1,6 +1,7 @@
 from manage import app, seed
 from app.extensions import db
 from sqlalchemy import text
+from flask_migrate import stamp
 
 if __name__ == "__main__":
     with app.app_context():
@@ -22,6 +23,14 @@ if __name__ == "__main__":
 
             # 3. Lancer le seeding (création/reset du SuperAdmin)
             seed()
+            
+            # 4. Synchroniser l'historique des migrations (Marquer comme à jour)
+            try:
+                stamp()
+                print("[OK] Historique des migrations synchronisé (Stamp).")
+            except Exception as e_stamp:
+                 print(f"[INFO] Stamp des migrations: {str(e_stamp)}")
+
             print("--- INITIALISATION RÉUSSIE ---")
         except Exception as e:
             db.session.rollback()
