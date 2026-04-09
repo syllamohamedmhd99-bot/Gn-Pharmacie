@@ -19,12 +19,8 @@ from flask import request
 # SI l'utilisateur est connecté et n'est pas un SuperAdmin.
 @event.listens_for(db.Query, "before_compile", retval=True)
 def apply_tenant_filter(query):
-    from flask import has_request_context, request
-    from flask_login import current_user
-    
-    # 1. Ne rien faire si on n'est pas dans une requête HTTP
-    if not has_request_context():
-        return query
+    # DÉSACTIVATION TEMPORAIRE POUR DIAGNOSTIC (ERROR 500)
+    return query
 
     # 2. Ne rien faire si on est en train de charger l'utilisateur (Évite la récursion infinie)
     try:
