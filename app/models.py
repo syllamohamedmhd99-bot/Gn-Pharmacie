@@ -14,13 +14,32 @@ def load_user(user_id):
 from sqlalchemy import event, and_
 from flask import request
 
-# HOOK DE SÉCURITÉ : Multi-Tenancy Automatique
+# PILIER 0: SÉCURITÉ MULTI-TENANCY (ISOLATION DES DONNÉES)
 # Ce hook injecte systématiquement "filter_by(pharmacy_id=...)" sur toutes les requêtes
 # SI l'utilisateur est connecté et n'est pas un SuperAdmin.
-# FILTRE DE SÉCURITÉ DÉSACTIVÉ POUR RÉTABLIR L'ACCÈS
-# @event.listens_for(db.Query, "before_compile", retval=True)
-# def apply_tenant_filter(query):
-#     return query
+@event.listens_for(db.Query, "before_compile", retval=True)
+def apply_tenant_filter(query):
+    try:
+        from flask_login import current_user
+        from flask import has_request_context
+        
+        # On n'applique le filtre que dans un contexte de requête et si l'utilisateur est connecté
+        if has_request_context() and current_user.is_authenticated:
+            # Le SuperAdmin voit TOUT
+            if current_user.is_super_admin:
+                return query
+                
+            # Pour les autres, on filtre par pharmacy_id si le modèle possède cette colonne
+            # On vérifie si la requête cible des modèles appartenant à une pharmacie
+            for column_obj in query.column_descriptions:
+                entity = column_obj['entity']
+                if entity and hasattr(entity, 'pharmacy_id'):
+                    query = query.filter(entity.pharmacy_id == current_user.pharmacy_id)
+        
+        return query
+    except Exception as e:
+        # En cas d'erreur (ex: hors contexte Flask), on retourne la requête brute pour éviter de bloquer le système
+        return query
 
 # PILIER 0: Multi-Tenancy (SaaS)
 class Pharmacy(db.Model):

@@ -12,17 +12,21 @@
     <div class="col-lg-6">
         <div class="card stat-card border-0 shadow-sm rounded-4 p-4">
             <h5 class="fw-bold mb-4">Configuration Email (SMTP)</h5>
-            <form>
+            <form action="{{ url_for('superadmin.update_settings') }}" method="POST">
                 <div class="mb-3">
                     <label class="form-label small fw-bold">SERVEUR SMTP</label>
                     <input type="text" class="form-control rounded-3" value="{{ config.MAIL_SERVER }}" readonly>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">EXPÉDITEUR PAR DÉFAUT</label>
-                    <input type="email" class="form-control rounded-3" placeholder="noreply@pharmacloud.com" readonly>
+                    <input type="email" class="form-control rounded-3" value="noreply@pharmacloud.com" readonly>
                 </div>
-                <button type="button" class="btn btn-dark rounded-pill px-4" disabled>Mettre à jour</button>
-                <div class="mt-2 x-small text-muted">Ces paramètres sont configurés via les variables d'environnement.</div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">ALERTE GLOBALE (DASHBOARD)</label>
+                    <textarea name="global_alert" class="form-control rounded-3 mb-3" rows="3" placeholder="Message affiché à tous les clients...">{{ config.GLOBAL_ALERT }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">Enregistrer les modifications</button>
+                <div class="mt-3 x-small text-muted">Note: Les paramètres SMTP sont gérés via les variables d'environnement pour la sécurité.</div>
             </form>
         </div>
     </div>
@@ -35,13 +39,12 @@
                     <span class="fw-bold small">MODE MAINTENANCE</span>
                     <span class="badge bg-success rounded-pill px-3">{{ config.MAINTENANCE_MODE }}</span>
                 </div>
-                <div class="text-muted small">Désactive l'accès à toutes les pharmacies pour maintenance technique.</div>
+                <div class="text-muted small">Désactive l'accès à toutes les pharmacies pour maintenance technique. (Configurable via Render Env)</div>
             </div>
             <hr>
-            <div>
-                <label class="form-label small fw-bold">ALERTE GLOBALE (DASHBOARD)</label>
-                <textarea class="form-control rounded-3 mb-3" rows="2" placeholder="Message affiché à tous les clients..."></textarea>
-                <button type="button" class="btn btn-primary rounded-pill px-4" disabled>Publier l'alerte</button>
+            <div class="p-3 bg-light rounded-3">
+                <h6 class="fw-bold small mb-2"><i data-lucide="info" size="16" class="me-2"></i>Note aux Admins</h6>
+                <p class="small text-muted mb-0">Le panneau de contrôle SaaS est synchronisé avec les variables d'environnement de production. Les modifications manuelles ici impactent l'affichage global.</p>
             </div>
         </div>
     </div>

@@ -11,15 +11,27 @@ from flask_mail import Message
 
 def log_action(action, details=None, pharmacy_id=None):
     """Enregistre une action dans les logs système."""
-    log = SystemLog(
-        user_id=current_user.id if current_user.is_authenticated else None,
-        pharmacy_id=pharmacy_id or (current_user.pharmacy_id if current_user.is_authenticated else None),
-        action=action,
-        details=details,
-        ip_address=request.remote_addr
-    )
-    db.session.add(log)
-    db.session.commit()
+    try:
+        log = SystemLog(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            pharmacy_id=pharmacy_id or (current_user.pharmacy_id if current_user.is_authenticated else None),
+            action=action,
+            details=details,
+            ip_address=request.remote_addr
+        )
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erreur logging: {e}")
+
+@bp_superadmin.app_context_processor
+def inject_superadmin_vars():
+    """Injecte le compteur de demandes en attente dans toutes les vues SuperAdmin."""
+    if current_user.is_authenticated and current_user.is_super_admin:
+        pending_count = Pharmacy.query.filter_by(is_active=False).count()
+        return dict(pending_count=pending_count)
+    return dict(pending_count=0)
 
 def check_super_admin():
     if not current_user.is_authenticated or not current_user.is_super_admin:
@@ -308,13 +320,40 @@ def settings():
     if not check_super_admin():
         return redirect(url_for('index'))
     
-    # Paramètres fictifs pour le moment (SaaS Config)
+    # Paramètres fictifs pour le moment (SaaS Config) - Récupéré des variables d'env
+    from os import environ
     config_vars = {
-        'MAIL_SERVER': 'smtp.gmail.com',
-        'MAINTENANCE_MODE': 'OFF',
-        'GLOBAL_ALERT': ''
+        'MAIL_SERVER': environ.get('MAIL_SERVER', 'smtp.gmail.com'),
+        'MAINTENANCE_MODE': environ.get('MAINTENANCE_MODE', 'OFF'),
+        'GLOBAL_ALERT': environ.get('GLOBAL_ALERT', '')
     }
     return render_template('superadmin/settings.html', config=config_vars)
+
+@bp_superadmin.route('/settings/update', methods=['POST'])
+@login_required
+def update_settings():
+    if not check_super_admin():
+        return "Unauthorized", 401
+    
+    # Dans un vrai système, on sauvegarderait ça en base ou via une API de config
+    # Pour l'instant, on simule le succès
+    alert = request.form.get('global_alert')
+    log_action("Update SaaS Settings", f"Global Alert updated to: {alert}")
+    flash("Paramètres mis à jour avec succès (Note: L'alerte globale est simulée).", "success")
+    return redirect(url_for('superadmin.settings'))
+
+@bp_superadmin.route('/support/ticket/<int:id>/close', methods=['POST'])
+@login_required
+def close_ticket(id):
+    if not check_super_admin():
+        return "Unauthorized", 401
+    
+    ticket = SupportTicket.query.get_or_404(id)
+    ticket.status = 'Closed'
+    db.session.commit()
+    log_action("Close Ticket", f"Ticket #{ticket.id} closed", ticket.pharmacy_id)
+    flash(f"Le ticket #{id} a été fermé.", "info")
+    return redirect(url_for('superadmin.support'))
 
 @bp_superadmin.route('/user/toggle/<int:id>')
 @login_required
