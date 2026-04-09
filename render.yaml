@@ -1,0 +1,27 @@
+services:
+  # Service Web pour l'application Flask
+  - type: web
+    name: pharmacloud-erp
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    envVars:
+      - key: FLASK_APP
+        value: manage.py
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pharmacloud-db
+          property: connectionString
+
+# Service de Base de données PostgreSQL
+databases:
+  - name: pharmacloud-db
+    databaseName: pharmacloud
+    user: pharmacloud
+    plan: free # Vous pourrez passer en payant plus tard si besoin
