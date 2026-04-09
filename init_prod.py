@@ -13,7 +13,7 @@ if __name__ == "__main__":
             # 2. Réparation manuelle des colonnes si déjà existantes (Migration Flash)
             try:
                 # Ajout de is_super_admin au cas où la table User existait déjà
-                db.session.execute(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE"))
+                db.session.execute(text("ALTER TABLE \"users\" ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE"))
                 db.session.commit()
                 print("[OK] Colonne is_super_admin vérifiée/ajoutée.")
             except Exception as e_col:

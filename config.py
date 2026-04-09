@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -11,30 +12,17 @@ class Config:
     # SQLALCHEMY Configuration
     db_url = os.environ.get('DATABASE_URL')
     if db_url and db_url.strip():
-        # Transformation postgres -> postgresql
+        # Handle postgres:// vs postgresql:// for SQLAlchemy 1.4+
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-        # Nettoyage ultra-robuste des query params
-        base_url = db_url.split('?')[0]
-        
-        # Support des mots de passe avec des @
-        if "@" in base_url and "://" in base_url:
-            protocol, rest = base_url.split("://", 1)
-            if "@" in rest:
-                creds, host = rest.rsplit("@", 1)
-                SQLALCHEMY_DATABASE_URI = f"{protocol}://{creds}@{host}"
-            else:
-                SQLALCHEMY_DATABASE_URI = base_url
-        else:
-            SQLALCHEMY_DATABASE_URI = base_url
+        SQLALCHEMY_DATABASE_URI = db_url
     else:
         SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Flask-Session
-    SESSION_TYPE = 'filesystem'
+    SESSION_TYPE = 'sqlalchemy'
     SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
@@ -51,15 +39,15 @@ class DevelopmentConfig(Config):
     DEBUG = True
 
 class ProductionConfig(Config):
-    DEBUG = True
+    DEBUG = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "connect_args": {
             "connect_timeout": 10
         },
         "pool_pre_ping": True,
     }
-    # En production, on utilise filesystem temporairement pour stabiliser la connexion
-    SESSION_TYPE = 'filesystem'
+    # En production, on utilise sqlalchemy pour une meilleure stabilité
+    SESSION_TYPE = 'sqlalchemy'
     
 config = {
     'development': DevelopmentConfig,
