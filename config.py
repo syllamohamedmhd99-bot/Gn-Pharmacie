@@ -10,7 +10,8 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'super-secret-key-change-in-prod'
     
     # SQLALCHEMY Configuration
-    db_url = os.environ.get('DATABASE_URL')
+    db_url = os.environ.get('DATABASE_PUBLIC_URL') or os.environ.get('DATABASE_URL')
+    
     if db_url and db_url.strip():
         # Handle postgres:// vs postgresql:// for SQLAlchemy 1.4+
         if db_url.startswith("postgres://"):

@@ -6,10 +6,14 @@ print("--- DIAGNOSTIC DES BOOTSTRAP PharmaCloud ---")
 
 try:
     print("1. Vérification des variables d'environnement...")
-    db_url = os.environ.get('DATABASE_URL')
-    print(f"   DATABASE_URL présent : {bool(db_url)}")
-    if db_url:
-        print(f"   Protocole : {db_url.split(':')[0]}")
+    db_url_int = os.environ.get('DATABASE_URL')
+    db_url_pub = os.environ.get('DATABASE_PUBLIC_URL')
+    print(f"   DATABASE_URL (Interne) présent : {bool(db_url_int)}")
+    print(f"   DATABASE_PUBLIC_URL (Publique) présent : {bool(db_url_pub)}")
+    
+    active_url = db_url_pub or db_url_int
+    if active_url:
+        print(f"   URL active détectée : {active_url.split('@')[-1]}") # On cache les accès pour securité
     
     print("\n2. Tentative d'import de l'application...")
     from app import create_app
