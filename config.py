@@ -50,7 +50,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
 
 class ProductionConfig(Config):
-    DEBUG = False
+    DEBUG = True
     SQLALCHEMY_ENGINE_OPTIONS = {
         "connect_args": {
             "connect_timeout": 10
