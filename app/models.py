@@ -22,30 +22,33 @@ def apply_tenant_filter(query):
     from flask import has_request_context, request
     from flask_login import current_user
     
-    # 1. Sécurité absolue : Ne rien faire si on n'est pas dans une requête HTTP
+    # 1. Ne rien faire si on n'est pas dans une requête HTTP
     if not has_request_context():
         return query
 
-    # 2. Ne pas filtrer si l'utilisateur n'est pas encore totalement chargé ou authentifié
-    # Cela évite la boucle infinie au moment du login
+    # 2. Ne rien faire si on est en train de charger l'utilisateur (Évite la récursion infinie)
     try:
+        # On vérifie si la requête concerne la table 'users'
+        for column_descr in query.column_descriptions:
+            entity = column_descr['entity']
+            # Si on interroge la table User, on ne filtre PAS ici pour laisser Flask-Login travailler
+            if entity and hasattr(entity, '__tablename__') and entity.__tablename__ == 'users':
+                return query
+
         if not current_user or not current_user.is_authenticated:
             return query
             
         if current_user.is_super_admin:
             return query
 
-        # 3. Ne pas filtrer pour les routes SuperAdmin
         if request.blueprint == 'superadmin':
             return query
 
-        # 4. Appliquer le filtre sur les entités possédant 'pharmacy_id'
         for column_descr in query.column_descriptions:
             entity = column_descr['entity']
             if entity and hasattr(entity, 'pharmacy_id'):
                 query = query.filter(entity.pharmacy_id == current_user.pharmacy_id)
     except Exception:
-        # En cas de doute (ex: pendant que Flask-Login s'initialise), on ne filtre pas
         pass
             
     return query
