@@ -59,6 +59,16 @@ def create_app(config_name='default'):
     def test_direct():
         return "Test Réussi [SYNC OK] - Le serveur fonctionne !"
 
+    @app.route('/debug-prod')
+    def debug_prod():
+        import traceback
+        try:
+            from app.models import User
+            users_count = User.query.count()
+            return f"Base de données OK. Nombre d'utilisateurs : {users_count}"
+        except Exception as e:
+            return f"ERREUR DÉTECTÉE :<br><pre>{traceback.format_exc()}</pre>"
+
     # Global Dashboard route
     @app.route('/')
     def index():
