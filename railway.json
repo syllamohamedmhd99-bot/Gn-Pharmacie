@@ -1,0 +1,10 @@
+{
+  "$schema": "https://railway.app/static/railway-conf.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "python init_prod.py && gunicorn -b 0.0.0.0:$PORT --timeout 120 run:app",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
