@@ -40,13 +40,16 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    
+    # Configuration conditionnelle pour éviter les TypeError (ex: SQLite vs Postgres)
     SQLALCHEMY_ENGINE_OPTIONS = {
-        "connect_args": {
-            "connect_timeout": 10
-        },
         "pool_pre_ping": True,
     }
-    # En production, on utilise sqlalchemy pour une meilleure stabilité
+    
+    # On ajoute connect_timeout SEULEMENT si on est sur Postgres
+    if os.environ.get('DATABASE_URL', '').startswith(('postgres://', 'postgresql://')):
+        SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = {"connect_timeout": 10}
+        
     SESSION_TYPE = 'sqlalchemy'
     
 config = {
