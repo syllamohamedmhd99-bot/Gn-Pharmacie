@@ -13,6 +13,7 @@
             --admin-sidebar: #0f172a;
             --admin-accent: #10b981;
             --admin-bg: #f1f5f9;
+            --sidebar-width: 280px;
         }
 
         body.modal-open {
@@ -20,7 +21,6 @@
             overflow-y: hidden !important;
         }
 
-        /* Fix pour éviter le saut vertical au clic sur "Nouveau Forfait" */
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--admin-bg);
@@ -31,8 +31,9 @@
             min-height: 100vh;
         }
 
+        /* Sidebar Responsive */
         .admin-sidebar {
-            width: 280px;
+            width: var(--sidebar-width);
             height: 100vh;
             position: fixed;
             left: 0;
@@ -41,14 +42,61 @@
             background-color: var(--admin-sidebar);
             color: white;
             padding: 2rem 1.5rem;
-            z-index: 1040; /* Supérieur au contenu mais inférieur aux modales */
+            z-index: 1050;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        /* Mobile Topbar */
+        .admin-mobile-topbar {
+            display: none;
+            background-color: var(--admin-sidebar);
+            color: white;
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .admin-content {
-            margin-left: 280px;
+            margin-left: var(--sidebar-width);
             padding: 2rem 3rem;
             min-height: 100vh;
             position: relative;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1045;
+            backdrop-filter: blur(2px);
+        }
+
+        @media (max-width: 991.98px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            .admin-sidebar.active {
+                transform: translateX(0);
+            }
+            .admin-content {
+                margin-left: 0;
+                padding: 1.5rem;
+            }
+            .admin-mobile-topbar {
+                display: flex;
+            }
+            .sidebar-overlay.active {
+                display: block;
+            }
         }
 
         .modal {
@@ -102,14 +150,6 @@
             border: none;
             border-radius: 20px;
             transition: box-shadow 0.3s, border-color 0.3s;
-            transform: translateZ(0);
-            backface-visibility: hidden;
-            will-change: box-shadow;
-        }
-
-        .stat-card:hover {
-            transform: none !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         .badge-active { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
@@ -117,7 +157,23 @@
     </style>
 </head>
 <body>
-    <div class="admin-sidebar">
+    <!-- Mobile Topbar -->
+    <div class="admin-mobile-topbar">
+        <div class="admin-brand fs-5">
+            <div class="bg-success p-1 rounded-2">
+                <i data-lucide="layout-dashboard" size="20"></i>
+            </div>
+            SaaS Control
+        </div>
+        <button class="btn btn-dark p-2" id="sidebarToggle">
+            <i data-lucide="menu"></i>
+        </button>
+    </div>
+
+    <!-- Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="admin-sidebar" id="adminSidebar">
         <div class="admin-brand">
             <div class="bg-success p-2 rounded-3">
                 <i data-lucide="layout-dashboard" size="24"></i>
@@ -177,6 +233,25 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         lucide.createIcons();
+
+        // Responsive Sidebar Toggle
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if(toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+        }
+
+        if(overlay) {
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>

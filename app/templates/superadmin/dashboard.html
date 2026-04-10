@@ -1,20 +1,20 @@
 {% extends "superadmin/base.html" %}
 
 {% block content %}
-<div class="row align-items-center mb-5">
-    <div class="col-lg-6">
+<div class="row align-items-center mb-4 mb-lg-5">
+    <div class="col-lg-6 mb-4 mb-lg-0">
         <h2 class="fw-bold mb-1 text-dark">SaaS Control Center</h2>
-        <p class="text-muted">Analyse des revenus abonnements et gestion du parc pharmacies.</p>
+        <p class="text-muted mb-0">Analyse des revenus abonnements et gestion du parc pharmacies.</p>
     </div>
     <div class="col-lg-6">
-        <div class="row g-3">
-            <div class="col-6">
+        <div class="row g-2 g-md-3">
+            <div class="col-12 col-sm-6">
                 <div class="bg-white p-3 rounded-4 shadow-sm border-start border-4 border-success h-100">
                     <div class="text-muted x-small fw-bold mb-1">CA SAAS TOTAL</div>
                     <div class="h5 fw-bold mb-0 text-success">{{ "{:,.0f}".format(total_saas_revenue|default(0)).replace(',', ' ') }} GNF</div>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-sm-6">
                 <div class="bg-white p-3 rounded-4 shadow-sm border-start border-4 border-info h-100">
                     <div class="text-muted x-small fw-bold mb-1">ENCASSEMENTS MOIS</div>
                     <div class="h5 fw-bold mb-0 text-info">{{ "{:,.0f}".format(monthly_saas_revenue|default(0)).replace(',', ' ') }} GNF</div>
