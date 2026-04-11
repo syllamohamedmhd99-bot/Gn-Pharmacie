@@ -398,9 +398,21 @@ def approve_pharmacy(id):
             if user.role == 'Admin':
                 user.is_active = True
                 
+        # NOUVEAU : Enregistrer la transaction pour que le compteur bouge !
+        # On cherche le prix du plan stocké dans la pharmacie
+        plan = SubscriptionPlan.query.filter_by(name=pharma.subscription_plan).first()
+        amount = plan.price if plan else 0
+
+        record = SubscriptionRecord(
+            pharmacy_id=pharma.id,
+            plan_name=pharma.subscription_plan or "Essai",
+            amount=amount
+        )
+        db.session.add(record)
+
         db.session.commit()
-        log_action("Approve Pharmacy", f"Pharma {pharma.name} approved and activated", pharma.id)
-        flash(f"La pharmacie {pharma.name} a été approuvée.", "success")
+        log_action("Approve Pharmacy", f"Pharma {pharma.name} approved ({pharma.subscription_plan}) - CA +{amount} GNF", pharma.id)
+        flash(f"La pharmacie {pharma.name} a été approuvée (Forfait: {pharma.subscription_plan}).", "success")
     except Exception as e:
         db.session.rollback()
         flash(f"Erreur lors de l'approbation : {str(e)}", "danger")
