@@ -130,7 +130,17 @@ def create_app(config_name='default'):
                     return jsonify({"error": msg}), 403
                 flash(msg, "warning")
                 return redirect(url_for('index'))
-                
+            
+            # RESTRICTION ESSAI : Bloquer certains modules
+            if pharma.subscription_plan == 'Essai':
+                # Liste des modules interdits en essai
+                restricted_blueprints = ['hr', 'analytics', 'productivity']
+                # On vérifie si le blueprint actuel est dans la liste
+                current_blueprint = request.blueprint
+                if current_blueprint in restricted_blueprints:
+                    flash("Ce module n'est pas disponible dans la version d'essai. Veuillez passer à un forfait supérieur pour y accéder.", "info")
+                    return redirect(url_for('index'))
+
             from datetime import datetime
             if pharma.subscription_end_date and pharma.subscription_end_date < datetime.utcnow():
                 # On laisse l'accès aux paramètres pour qu'ils voient l'expiration

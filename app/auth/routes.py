@@ -95,19 +95,21 @@ def register_admin():
         try:
             print(f"--- ETAPE 2 : Création de la pharmacie {pharma_name} ---")
             trial_end = datetime.utcnow() + timedelta(days=30)
+            is_trial = session.get('reg_plan', 'Essai') == 'Essai'
+            
             new_pharmacy = Pharmacy(
                 name=pharma_name,
                 address=session.get('reg_pharma_address'),
                 license_number=session.get('reg_pharma_license'),
                 subscription_plan=session.get('reg_plan', 'Essai'),
                 subscription_end_date=trial_end,
-                is_active=False # Verrouillé par défaut
+                is_active=True if is_trial else False # Auto-activation si essai
             )
             db.session.add(new_pharmacy)
             db.session.flush() # Récupérer l'ID sans commiter tout de suite
             print(f"ID Pharmacie généré : {new_pharmacy.id}")
             
-            # 2. Créer l'Utilisateur Admin (Inactif par défaut)
+            # 2. Créer l'Utilisateur Admin
             print(f"--- ETAPE 2 : Création de l'utilisateur {email} ---")
             new_user = User(
                 email=email,
@@ -115,7 +117,7 @@ def register_admin():
                 last_name=last_name,
                 role='Admin',
                 pharmacy_id=new_pharmacy.id,
-                is_active=False, # Validation Super-Admin requise
+                is_active=True if is_trial else False, # Auto-activation si essai
                 can_view_pos=True,
                 can_view_inventory=True,
                 can_view_hr=True,

@@ -203,7 +203,8 @@
                 </div>
             </div>
 
-            <!-- PÔLE RH & PRODUCTIVITÉ -->
+            {% if current_user.pharmacy.subscription_plan != 'Essai' %}
+            <!-- PÔLE RH & PRODUCTIVITÉ (Masqué en Essai) -->
             <div class="nav-item">
                 <a class="nav-link d-flex justify-content-between align-items-center {% if 'hr' in request.path or 'calendar' in request.endpoint or 'tasks' in request.endpoint %}active{% endif %}" 
                    data-bs-toggle="collapse" href="#collapseRH" role="button" aria-expanded="{% if 'hr' in request.path or 'calendar' in request.endpoint or 'tasks' in request.endpoint %}true{% else %}false{% endif %}" aria-controls="collapseRH">
@@ -227,7 +228,7 @@
                 </div>
             </div>
 
-            <!-- PÔLE ADMINISTRATION -->
+            <!-- PÔLE ADMINISTRATION (Masqué en Essai) -->
             <div class="nav-item">
                 <a class="nav-link d-flex justify-content-between align-items-center {% if 'analytics' in request.endpoint or 'directory' in request.path or 'settings' in request.path %}active{% endif %}" 
                    data-bs-toggle="collapse" href="#collapseAdmin" role="button" aria-expanded="{% if 'analytics' in request.endpoint or 'directory' in request.path or 'settings' in request.path %}true{% else %}false{% endif %}" aria-controls="collapseAdmin">
@@ -248,6 +249,18 @@
                     </div>
                 </div>
             </div>
+            {% else %}
+            <!-- Badge Plan Essai pour la clarté -->
+            <div class="mt-4 px-3">
+                <div class="alert alert-info py-2 px-3 rounded-4 border-0 mb-0" style="background: rgba(255,255,255,0.1); color: white;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i data-lucide="info" size="16"></i>
+                        <span class="x-small fw-bold">PLAN ESSAI</span>
+                    </div>
+                    <p class="mb-0 x-small opacity-75">Certains modules sont désactivés pendant l'essai.</p>
+                </div>
+            </div>
+            {% endif %}
 
             <a class="nav-link {% if 'profile' in request.path %}active{% endif %}"
                 href="{{ url_for('auth.profile') }}">
